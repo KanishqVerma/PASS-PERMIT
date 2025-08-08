@@ -9,6 +9,10 @@ app.get("/",(req,res)=>{
     res.send("Hi , I am root");
 })
 
+app.get("/login",(req,res)=>{
+    res.render("users/login.ejs");
+})
+
 
 app.set('view engine',"ejs");
 app.set("views",path.join(__dirname,"views"));
