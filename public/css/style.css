@@ -1,0 +1,9 @@
+body {
+  background: linear-gradient(135deg, #e6f0ff 0%, #f9fcff 100%);
+  min-height: 100vh;
+}
+
+.signup-box:hover {
+  box-shadow: 0 8px 20px rgba(14, 122, 231, 0.3);
+  transition: all 0.5s ease-in-out;
+}

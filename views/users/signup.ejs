@@ -1,0 +1,36 @@
+<% layout("layouts/boilerplate") %>
+<div class="container d-flex justify-content-center align-items-center" style="height: 100vh">
+  <div class="card signup-box p-4" style="width: 30rem">
+    <h3 class="text-center mb-3">Create Account</h3>
+
+    <!-- Signup Form -->
+    <form>
+      <div class="mb-3">
+        <label for="email" class="form-label">Email Adress</label>
+        <input type="email" class="form-control" id="email" name="email" required />
+      </div>
+
+      <div class="mb-3">
+        <label for="username" class="form-label">username</label>
+        <input type="username" class="form-control" id="username" name="username" required />
+      </div>
+
+      <div class="mb-3">
+        <label for="password" class="form-label">Create new Password</label>
+        <input type="password" class="form-control" id="password" name="password" required />
+      </div>
+
+      <div class="mb-3">
+        <label for="confirmPassword" class="form-label">Confirm Password</label>
+        <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required />
+      </div>
+      <!-- divider line -->
+      <div class="d-flex align-items-center my-4">
+        <hr class="flex-grow-1" />
+        <span class="mx-2">OR</span>
+        <hr class="flex-grow-1" />
+      </div>
+      <button type="submit" class="btn text-white w-100" style="background-color: #0059b3"><img src="https://play-lh.googleusercontent.com/EqNJ0V0N0vzNKxdOl-Uz4OW5t8b4BhROYEKvQVqi1s1O_Ng2E_AobK1YB5hVFvpD5Yk" alt="" width="25" height="25" class="me-2" />Signup via DigiLocker</button>
+    </form>
+  </div>
+</div>
