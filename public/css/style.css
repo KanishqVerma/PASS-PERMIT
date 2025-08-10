@@ -1,24 +1,35 @@
-.login-page-body {
-      background-color: #f5f5f5;
+body {
+  background: linear-gradient(135deg, #e6f0ff 0%, #f9fcff 100%);
+  min-height: 100vh;
 }
-    
+
+.signup-box:hover {
+  box-shadow: 0 8px 20px rgba(14, 122, 231, 0.3);
+  transition: all 0.5s ease-in-out;
+}
+.login-page-body {
+  background-color: #f5f5f5;
+}
+
 .login-container {
-      max-width: 400px;
-      margin: 80px auto;
-      background: white;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-      
-    }
+  max-width: 400px;
+  margin: 80px auto;
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
 .digilocker-btn {
-      background-color: #0c6cf2 !important;
-      color: white !important;
- }
+  background-color: #0c6cf2 !important;
+  color: white !important;
+}
 .digilocker-btn:hover {
-      color: black !important;
+  color: black !important;
 }
 .loginBtn:hover {
+  color: black !important;
+}
+
       color: black !important;
 }
 
@@ -132,3 +143,4 @@
     font-size: 3rem;
   }
 }
+
