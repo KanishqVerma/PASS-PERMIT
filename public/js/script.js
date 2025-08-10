@@ -17,3 +17,16 @@
     }, false)
   })
 })()
+
+// Pop animation for the pass card
+document.addEventListener("DOMContentLoaded", () => {
+  const passCard = document.getElementById("passCard");
+
+  passCard.addEventListener("click", () => {
+    passCard.classList.add("pop");
+
+    setTimeout(() => {
+      passCard.classList.remove("pop");
+    }, 300);
+  });
+});
