@@ -4,9 +4,9 @@ const mongoose = require("mongoose");
 const path = require("path");
 const ejsMate = require("ejs-mate");
 
-app.get("/", (req, res) => {
-  res.send("Hi , I am root");
-});
+// app.get("/", (req, res) => {
+//   res.send("Hi , I am root");
+// });
 
 
 app.get("/signup", (req, res) => {
