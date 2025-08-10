@@ -8,9 +8,16 @@ app.get("/", (req, res) => {
   res.send("Hi , I am root");
 });
 
+
 app.get("/signup", (req, res) => {
   res.render("users/signup");
 });
+
+
+app.get("/",(req,res)=>{
+    res.render("layouts/boilerplate.ejs");
+})
+
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
