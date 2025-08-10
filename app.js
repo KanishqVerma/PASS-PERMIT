@@ -5,8 +5,12 @@ const path=require("path");
 const ejsMate=require("ejs-mate");
 
 
+// app.get("/",(req,res)=>{
+//     res.send("Hi , I am root");
+// })
+
 app.get("/",(req,res)=>{
-    res.send("Hi , I am root");
+    res.render("layouts/boilerplate.ejs");
 })
 
 app.get("/login",(req,res)=>{
