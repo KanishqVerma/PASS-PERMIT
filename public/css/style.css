@@ -19,6 +19,9 @@ body {
   border-radius: 10px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
+.signup-box {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
 .digilocker-btn {
   background-color: #0c6cf2 !important;
   color: white !important;
