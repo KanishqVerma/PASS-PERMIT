@@ -4,19 +4,15 @@ const mongoose = require("mongoose");
 const path = require("path");
 const ejsMate = require("ejs-mate");
 
-app.get("/", (req, res) => {
-  res.send("Hi , I am root");
+
+app.get("/home", (req, res) => {
+  res.render("layouts/boilerplate.ejs");
 });
 
 
-app.get("/signup", (req, res) => {
-  res.render("users/signup");
-});
-
-
-app.get("/",(req,res)=>{
-    res.render("layouts/boilerplate.ejs");
-})
+// app.get("/",(req,res)=>{
+//     res.render("layouts/boilerplate.ejs");
+// })
 
 
 app.set("view engine", "ejs");
