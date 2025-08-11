@@ -7,16 +7,6 @@ const ejsMate = require("ejs-mate");
 
 
 
-app.get("/home", (req, res) => {
-  res.render("layouts/boilerplate.ejs");
-});
-
-
-// app.get("/",(req,res)=>{
-//     res.render("layouts/boilerplate.ejs");
-// })
-
-
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(express.urlencoded({ extended: true }));
