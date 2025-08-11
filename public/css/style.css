@@ -7,6 +7,7 @@ body {
   box-shadow: 0 8px 20px rgba(14, 122, 231, 0.3);
   transition: all 0.5s ease-in-out;
 }
+
 .login-page-body {
   background-color: #f5f5f5;
 }
@@ -19,16 +20,20 @@ body {
   border-radius: 10px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
+
 .digilocker-btn {
   background-color: #0c6cf2 !important;
   color: white !important;
 }
+
 .digilocker-btn:hover {
   color: black !important;
 }
+
 .loginBtn:hover {
   color: black !important;
 }
+
 
 
 /*Navbar */
@@ -102,7 +107,7 @@ body {
 
 .tilted-card.pop {
   transform: rotate(0deg) scale(1.15);
-  box-shadow: 0 25px 60px rgba(0,0,0,0.25);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
 }
 
 .tilted-card .bg-light {
@@ -131,14 +136,56 @@ body {
     padding: 2rem;
     border-radius: 1.5rem;
   }
+
   .tilted-card .bg-light {
     padding: 1.8rem;
   }
+
   .hero-section .row {
     margin-top: -20px;
   }
+
   .tilted-card i {
     font-size: 3rem;
   }
 }
 
+/* About Section */
+.about-heading {
+  position: relative;
+  display: inline-block;
+}
+
+.about-heading::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -5px;
+  width: 0;
+  height: 3px;
+  background-color: #0059b3;
+  transition: width 0.3s ease;
+}
+
+.about-heading:hover::after {
+  width: 100%;
+}
+
+@media (max-width: 992px) {
+  .about-section {
+    padding: 60px 0;
+  }
+
+  .about-section .ratio {
+    max-width: 100%;
+  }
+
+  .about-section h2 {
+    font-size: 2rem;
+  }
+
+  .about-section p {
+    font-size: 1.1rem;
+    line-height: 1.8;
+  }
+}

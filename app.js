@@ -5,6 +5,8 @@ const path = require("path");
 const ejsMate = require("ejs-mate");
 
 
+
+
 app.get("/home", (req, res) => {
   res.render("layouts/boilerplate.ejs");
 });
