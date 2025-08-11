@@ -12,6 +12,10 @@ app.get("/signup", (req, res) => {
   res.render("users/signup");
 });
 
+app.get("/login", (req, res) => {
+  res.render("users/login");
+});
+
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(express.urlencoded({ extended: true }));
