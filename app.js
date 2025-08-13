@@ -4,22 +4,21 @@ const mongoose = require("mongoose");
 const path = require("path");
 const ejsMate = require("ejs-mate");
 
-
-
-
 app.get("/home", (req, res) => {
-  res.render("layouts/boilerplate.ejs");
+  res.render("layouts/boilerplate.ejs", { page: "home" });
 });
 
+app.get("/login", (req, res) => {
+  res.render("users/login.ejs", { page: "login" });
+});
+
+app.get("/signup", (req, res) => {
+  res.render("users/signup.ejs", { page: "signup" });
+});
 
 // app.get("/",(req,res)=>{
 //     res.render("layouts/boilerplate.ejs");
 // })
-
-
-app.get("/login", (req, res) => {
-  res.render("users/login");
-});
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
