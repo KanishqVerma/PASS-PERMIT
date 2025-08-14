@@ -1,0 +1,78 @@
+<% layout('layouts/boilerplate') %>
+
+<div class="container my-5">
+  <div class="card p-4 shadow-lg rounded theme-card">
+    <h2 class="mb-4 text-center theme-title">HR Approval - Pass Details</h2>
+
+    <form method="GET" action="/hrDash">
+
+      <!-- User Details-->
+      <div class="mb-3">
+        <label class="form-label">Your Name</label>
+        <input type="text" class="form-control bg-light text-muted" value="Rahul Sharma" readonly>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Purpose to Visit</label>
+        <input type="text" class="form-control bg-light text-muted" value="Job Interview" readonly>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Aadhaar Last 4 Digits</label>
+        <input type="text" class="form-control bg-light text-muted" value="1234" readonly>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">ID Card Picture</label><br>
+        <img src="/images/sample-id.jpg" alt="ID Card" style="max-width:200px; border:1px solid #ccc; border-radius:8px;">
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label">Phone Number</label>
+          <input type="text" class="form-control bg-light text-muted" value="9876543210" readonly>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Enrollment/Company Id Number</label>
+          <input type="text" class="form-control bg-light text-muted" value="EMP2025" readonly>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">College/Company Name</label>
+        <input type="text" class="form-control bg-light text-muted" value="Tech Solutions Pvt Ltd" readonly>
+      </div>
+
+      <!-- Vehicle Section -->
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label">Vehicle Type</label>
+          <input type="text" class="form-control bg-light text-muted" value="Car" readonly>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Vehicle Number</label>
+          <input type="text" class="form-control bg-light text-muted" value="MH12AB1234" readonly>
+        </div>
+      </div>
+
+      <!-- HR Inputs -->
+      <h5 class="mt-4" style="color:#0059b3;">HR Approval</h5>
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label fw-bold">Valid From</label>
+          <input type="date" class="form-control" name="validFrom" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-bold">Valid Upto</label>
+          <input type="date" class="form-control" name="validUpto" required>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <div class="text-center mt-4">
+        <button type="submit" class="btn btn-success px-4">Issue a Pass</button>
+      </div>
+
+    </form>
+  </div>
+</div>
