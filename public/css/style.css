@@ -27,20 +27,9 @@ body {
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
-.digilocker-btn {
-  background-color: #0c6cf2 !important;
-  color: white !important;
-}
-
-.digilocker-btn:hover {
-  color: black !important;
-}
-
 .loginBtn:hover {
   color: black !important;
 }
-
-
 
 /*Navbar */
 .navbar-nav .nav-link {
