@@ -1,0 +1,91 @@
+<% layout("layouts/boilerplate") %>
+<div class="container my-5">
+  <div class="card p-4 shadow-lg rounded theme-card">
+    <h2 class="mb-4 text-center theme-title">Issue a Pass</h2>
+    <form method="POST" action="/issue" enctype="multipart/form-data">
+
+      <div class="mb-3">
+        <label class="form-label form-label-blue">Issued By (HR Details)</label>
+        <input type="text" class="form-control" name="issuedBy" placeholder="Enter HR Name" required>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Employee ID Number</label>
+          <input type="number" class="form-control" name="employeeId" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Department</label>
+          <input type="text" class="form-control" name="department" required>
+        </div>
+      </div>
+
+      <div class="mt-3">
+        <label class="form-label form-label-blue">Issued For</label>
+        <input type="text" class="form-control" name="visitorName" placeholder="Enter Visitor's Name" required>
+      </div>
+
+      <div class="mt-3">
+        <label class="form-label">Aadhaar Last 4 Digits</label>
+        <div class="input-group">
+          <span class="input-group-text">xxxx-xxxx-</span>
+          <input type="number" class="form-control" name="aadhaarLast4" maxlength="4" oninput="this.value=this.value.slice(0,4)" required>
+        </div>
+      </div>
+
+      <div class="mt-3">
+        <label class="form-label">Upload ID Card Picture</label>
+        <input type="file" class="form-control" name="idCardImage" accept="image/*" required>
+      </div>
+
+      <div class="row g-3 mt-1">
+        <div class="col-md-6">
+          <label class="form-label">Email ID</label>
+          <input type="email" class="form-control" name="email" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Phone Number</label>
+          <input type="tel" class="form-control" name="phone" required>
+        </div>
+      </div>
+
+      <div class="mt-3">
+        <label class="form-label">College/Company Name</label>
+        <input type="text" class="form-control" name="organization" required>
+      </div>
+
+      <div class="row g-3 mt-1">
+        <div class="col-md-6">
+          <label class="form-label">Valid From</label>
+          <input type="date" class="form-control" name="validFrom" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Valid Upto</label>
+          <input type="date" class="form-control" name="validUpto" required>
+        </div>
+      </div>
+
+      <h5 class="mt-4" style="color:#0059b3;">Vehicle Section (Optional)</h5>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Vehicle Type</label>
+          <select class="form-select" name="vehicleType">
+            <option value="">Select</option>
+            <option>Car</option>
+            <option>Bike</option>
+            <option>Scooter</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Vehicle Number</label>
+          <input type="text" class="form-control" name="vehicleNumber">
+        </div>
+      </div>
+
+      <div class="text-center mt-4">
+        <button type="submit" class="btn btn-theme">Submit</button>
+      </div>
+    </form>
+  </div>
+</div>

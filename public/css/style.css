@@ -305,3 +305,55 @@ body {
     line-height: 1.8;
   }
 }
+
+/* Issue pass form page */
+  .theme-card {
+    border: none;
+    background-color: #f8f9fa;
+  }
+  .theme-title {
+    color: #0059b3;
+    font-weight: bold;
+  }
+  .form-label {
+    font-weight: 500;
+    color: #333;
+  }
+  .form-label-blue {
+    color: #0059b3;
+    font-weight: 600;
+  }
+  .form-control, .form-select {
+    border-radius: 10px;
+    padding: 0.65rem;
+  }
+  .btn-theme {
+    background-color: #0059b3 !important; 
+    border: none;
+    color: #fff !important;
+    padding: 0.7rem 2rem;
+    border-radius: 50px;
+    transition: 0.3s ease;
+  }
+  .btn-theme:hover {
+    background-color: #004080;
+    transform: translateY(-2px);
+  }
+
+
+  @media (max-width: 576px) {
+    .theme-card {
+      padding: 1.5rem;
+    }
+    .form-control, .form-select {
+      font-size: 0.95rem;
+      padding: 0.55rem;
+    }
+    .theme-title {
+      font-size: 1.8rem;
+    }
+    .btn-theme {
+      width: 100%;
+      padding: 0.8rem;
+    }
+  }

@@ -19,6 +19,10 @@ app.get("/signup", (req, res) => {
   res.render("users/signup.ejs",{ page: "signup" }); 
 });
 
+app.get("/issue", (req, res) => {
+  res.render("includes/issue-pass.ejs",{ page: "issue" });
+});
+
 
 // app.get("/",(req,res)=>{
 //     res.render("layouts/boilerplate.ejs");
