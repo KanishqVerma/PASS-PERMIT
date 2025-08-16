@@ -1,0 +1,82 @@
+<% layout('layouts/boilerplate') %>
+
+<div class="container my-5">
+  <div class="card p-4 shadow-lg rounded theme-card">
+    <h2 class="mb-4 text-center theme-title">Pass Details Form</h2>
+
+    <form method="POST" action="/userDash" enctype="multipart/form-data">
+
+      <!-- Pass Details -->
+      <div class="mb-3">
+        <label class="form-label">Your Name</label>
+        <input type="text" class="form-control" name="visitorName" required>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Purpose to Visit</label>
+        <select class="form-select" name="purpose" required>
+          <option value="">Select Purpose</option>
+          <option>Internship</option>
+          <option>Job Interview</option>
+          <option>Meeting</option>
+          <option>Client Visit</option>
+          <option>Training</option>
+          <option>Other</option>
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Aadhaar Last 4 Digits</label>
+        <div class="input-group">
+          <span class="input-group-text">xxxx-xxxx-</span>
+          <input type="number" class="form-control" name="aadhaarLast4" maxlength="4" oninput="this.value=this.value.slice(0,4)" required>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Upload ID Card Picture</label>
+        <input type="file" class="form-control" name="idCardImage" accept="image/*" required>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label">Phone Number</label>
+          <input type="tel" class="form-control" name="phone" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Enrollment/Company Id Number</label>
+          <input type="number" class="form-control" name="enroll" required>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">College/Company Name</label>
+        <input type="text" class="form-control" name="organization" required>
+      </div>
+
+      <!-- Vehicle Section -->
+      <h5 class="mt-4" style="color:#0059b3;">Vehicle Section (Optional)</h5>
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label">Vehicle Type</label>
+          <select class="form-select" name="vehicleType">
+            <option value="">Select</option>
+            <option>Car</option>
+            <option>Bike</option>
+            <option>Scooter</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Vehicle Number</label>
+          <input type="text" class="form-control" name="vehicleNumber">
+        </div>
+      </div>
+
+      <div class="text-center mt-4">
+        <button type="submit" class="btn btn-theme px-4">Submit</button>
+      </div>
+
+    </form>
+  </div>
+</div>
