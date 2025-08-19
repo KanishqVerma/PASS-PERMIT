@@ -4,31 +4,27 @@
     <h3 class="text-center mb-3">Create Account</h3>
 
     <!-- Signup Form -->
-    <form action="/fill">
-      <div class="mb-3">
-        <label for="username" class="form-label">username</label>
-        <input type="username" class="form-control" id="username" name="username" required />
-      </div>
-
+    <form action="/fill" method="POST">
       <div class="mb-3">
         <label for="email" class="form-label">Email Address</label>
         <input type="email" class="form-control" id="email" name="email" required />
       </div>
 
-       <div class="mb-3">
+      <div class="mb-3">
         <label for="companyID" class="form-label">CompanyId</label>
-        <input type="companyID" class="form-control" id="companyID" placeholder="Enter CompanyId">
+        <input type="companyID" name="compID" class="form-control" id="companyID" placeholder="Enter CompanyId" />
       </div>
 
       <div class="mb-3">
         <label for="password" class="form-label">Create new Password</label>
-        <input type="password" class="form-control" id="password" name="password" required />
+        <input type="password" class="form-control" id="password" name="password" placeholder="new Password" required />
       </div>
 
       <div class="mb-3">
         <label for="confirmPassword" class="form-label">Confirm Password</label>
-        <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required />
+        <input type="password" class="form-control" id="confirmPassword" placeholder="confirm Password" name="confirmPassword" required />
       </div>
+
       <button type="submit" class="btn text-white w-100" style="background-color: #0059b3">Signup</button>
     </form>
   </div>

@@ -9,11 +9,10 @@ body {
   padding: 0;
 }
 
-.signup-box:hover {
+/* .signup-box:hover {
   box-shadow: 0 8px 20px rgba(14, 122, 231, 0.3);
   transition: all 0.5s ease-in-out;
 }
-
 .login-page-body {
   background-color: #f5f5f5;
 }
@@ -25,6 +24,17 @@ body {
   padding: 30px;
   border-radius: 10px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+.signup-box {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+.digilocker-btn {
+  background-color: #0c6cf2 !important;
+  color: white !important;
+}
+
+.digilocker-btn:hover {
+  color: black !important;
 }
 
 .loginBtn:hover {
@@ -146,114 +156,115 @@ body {
 }
 
 /*Process Landing Section */
-.how-to-section{
-    background-color: #1e293b;
-    min-height: 100vh;
-    min-width: 100vw;   
-    color: #FFFFFF;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    /* font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; */
+.how-to-section {
+  background-color: #1e293b;
+  min-height: 100vh;
+  min-width: 100vw;
+  color: #ffffff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  /* font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; */
 }
 
-.how-to-heading{
-    display: flex;
-    flex: 1;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
+.how-to-heading {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
 }
 
-.how-to-heading > h1{
-    font-size: 3rem;
-    padding-bottom: 0.5em;
+.how-to-heading > h1 {
+  font-size: 3rem;
+  padding-bottom: 0.5em;
 }
 
-.how-to-steps{
-    display: flex;
-    flex: 1;
-    justify-content: center;
-    align-items: first baseline;
-    justify-items: space-around !important;
-    align-content: space-around !important;
-    gap: 5rem;
+.how-to-steps {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  align-items: first baseline;
+  justify-items: space-around !important;
+  align-content: space-around !important;
+  gap: 5rem;
 }
 
-.step1, .step2, .step3{
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    margin: 2em 0em;
+.step1,
+.step2,
+.step3 {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin: 2em 0em;
 }
 
-.circle1{
-    height: 4rem;
-    width: 4rem;
-    background-color: #123bb5;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-weight: bold;
-    font-size: 1.2rem;
+.circle1 {
+  height: 4rem;
+  width: 4rem;
+  background-color: #123bb5;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 1.2rem;
 }
 
-.circle1:hover{
-    background-color: #123292;
+.circle1:hover {
+  background-color: #123292;
 }
 
-.circle2{
-    height: 4rem;
-    width: 4rem;
-    background-color: #f97415;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-weight: bold;
-    font-size: 1.2rem;
+.circle2 {
+  height: 4rem;
+  width: 4rem;
+  background-color: #f97415;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 1.2rem;
 }
 
-.circle2:hover{
-    background-color: #8b4310;
+.circle2:hover {
+  background-color: #8b4310;
 }
 
-
-.circle3{
-    height: 4rem;
-    width: 4rem;
-    background-color: #21c45d;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-weight: bold;
-    font-size: 1.2rem;
+.circle3 {
+  height: 4rem;
+  width: 4rem;
+  background-color: #21c45d;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 1.2rem;
 }
 
-.circle3:hover{
-    background-color: #157337;
+.circle3:hover {
+  background-color: #157337;
 }
 
-.step-heading{
-    padding: 1em 0em;
+.step-heading {
+  padding: 1em 0em;
 }
 
-.step-text{
-    text-align: center;
-    max-width: 32ch;
+.step-text {
+  text-align: center;
+  max-width: 32ch;
 }
 
-.circle-hover{
-    transition: transform 0.3s ease;
+.circle-hover {
+  transition: transform 0.3s ease;
 }
 
-.circle-hover:hover{
-    transform: scale(1.1);
-    cursor: pointer;
+.circle-hover:hover {
+  transform: scale(1.1);
+  cursor: pointer;
 }
 
 /* About Section */
@@ -297,53 +308,54 @@ body {
 }
 
 /* Issue pass form page */
+.theme-card {
+  border: none;
+  background-color: #f8f9fa;
+}
+.theme-title {
+  color: #0059b3;
+  font-weight: bold;
+}
+.form-label {
+  font-weight: 500;
+  color: #333;
+}
+.form-label-blue {
+  color: #0059b3;
+  font-weight: 600;
+}
+.form-control,
+.form-select {
+  border-radius: 10px;
+  padding: 0.65rem;
+}
+.btn-theme {
+  background-color: #0059b3 !important;
+  border: none;
+  color: #fff !important;
+  padding: 0.7rem 2rem;
+  border-radius: 50px;
+  transition: 0.3s ease;
+}
+.btn-theme:hover {
+  background-color: #004080;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 576px) {
   .theme-card {
-    border: none;
-    background-color: #f8f9fa;
+    padding: 1.5rem;
+  }
+  .form-control,
+  .form-select {
+    font-size: 0.95rem;
+    padding: 0.55rem;
   }
   .theme-title {
-    color: #0059b3;
-    font-weight: bold;
-  }
-  .form-label {
-    font-weight: 500;
-    color: #333;
-  }
-  .form-label-blue {
-    color: #0059b3;
-    font-weight: 600;
-  }
-  .form-control, .form-select {
-    border-radius: 10px;
-    padding: 0.65rem;
+    font-size: 1.8rem;
   }
   .btn-theme {
-    background-color: #0059b3 !important; 
-    border: none;
-    color: #fff !important;
-    padding: 0.7rem 2rem;
-    border-radius: 50px;
-    transition: 0.3s ease;
+    width: 100%;
+    padding: 0.8rem;
   }
-  .btn-theme:hover {
-    background-color: #004080;
-    transform: translateY(-2px);
-  }
-
-
-  @media (max-width: 576px) {
-    .theme-card {
-      padding: 1.5rem;
-    }
-    .form-control, .form-select {
-      font-size: 0.95rem;
-      padding: 0.55rem;
-    }
-    .theme-title {
-      font-size: 1.8rem;
-    }
-    .btn-theme {
-      width: 100%;
-      padding: 0.8rem;
-    }
-  }
+}
