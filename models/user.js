@@ -1,3 +1,4 @@
+const { string, required } = require("joi");
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
@@ -21,8 +22,8 @@ const userSchema = new mongoose.Schema(
     },
 
     idCardPic: {
-      type: String, // store image URL or file path
-      required: true,
+      type:String,
+      required:true // store image URL or file path,
     },
 
     phone: {
@@ -32,7 +33,7 @@ const userSchema = new mongoose.Schema(
     },
 
     enrollmentOrCompanyId: {
-      type: String,
+      type: Number,
       required: true,
     },
 
