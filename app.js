@@ -87,7 +87,13 @@ app.get("/hraprooval", (req, res) => {
 
 app.post("/fill", async (req, res) => {
   let { email, compID, password } = req.body;
-
+  // check if user already exists
+  let existingUser = await signupModel.findOne({ email: email });
+  if (existingUser) {
+    console.log("User already exists");
+    res.send("This email already exists. Please login.");
+  }
+  // else create new user
   let createdsignup = await signupModel.create({
     email: email,
     enrollmentOrCompanyId: compID,
@@ -99,6 +105,7 @@ app.post("/fill", async (req, res) => {
 
 app.post("/userDash",upload.single("idPic"),validateFill, async (req, res) => {
   let { name, purpose, adhaar, phone, compID, compName, vehicleType, vehicleNumber } = req.body;
+
   let createdUser = await userModel.create({
     name,
     purpose,
@@ -111,7 +118,7 @@ app.post("/userDash",upload.single("idPic"),validateFill, async (req, res) => {
     vehicleNumber,
   });
   console.log("User added");
-  res.render("includes/user_dashboard.ejs", { page: "userDash" });
+  res.render("includes/user_dashboard.ejs", { page: "userDash", user: createdUser });
 });
 
 app.set("view engine", "ejs");
