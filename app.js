@@ -60,6 +60,18 @@ app.get("/signup", (req, res) => {
   res.render("users/signup.ejs", { page: "signup" });
 });
 
+app.get("/about", (req, res) => {
+  res.render("includes/about.ejs", { page: "about" });
+});
+
+app.get("/process", (req, res) => {
+  res.render("includes/process.ejs", { page: "process" });
+});
+
+app.get("/contact", (req, res) => {
+  res.render("includes/contact.ejs", { page: "contact" });
+});
+
 
 app.get("/hrDash", (req, res) => {
   res.render("includes/hr_dashboard.ejs", { page: "hrDash" });
