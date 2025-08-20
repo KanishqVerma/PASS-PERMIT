@@ -7,6 +7,10 @@ const ejsMate = require("ejs-mate");
 const signupModel = require("./models/signup");
 const userModel = require("./models/user");
 const dotenv = require("dotenv");
+const {fillSchema}=require("./schema.js");
+const ExpressError = require("./utils/ExpressError.js");
+const wrapAsync = require("./utils/wrapAsync.js");
+
 dotenv.config();
 app.use(express.urlencoded({ extended: true }));
 mongoose
@@ -31,6 +35,19 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
+const validateFill=(req,res,next)=>{
+  console.log(fillSchema.describe());
+console.log(req.body);
+  let {error}=fillSchema.validate(req.body);
+  
+  if(error){
+    let errMsg=error.details.map((el)=>el.message).join(",");
+    throw new ExpressError(404,errMsg);
+  }else{
+    next();
+  }
+}
+
 app.get("/home", (req, res) => {
   res.render("layouts/boilerplate.ejs", { page: "home" });
 });
@@ -43,13 +60,6 @@ app.get("/signup", (req, res) => {
   res.render("users/signup.ejs", { page: "signup" });
 });
 
-// app.get("/fill", (req, res) => {
-
-// });
-
-// app.get("/userDash", (req, res) => {
-
-// });
 
 app.get("/hrDash", (req, res) => {
   res.render("includes/hr_dashboard.ejs", { page: "hrDash" });
@@ -81,10 +91,7 @@ app.post("/fill", async (req, res) => {
   res.render("includes/fill-pass.ejs", { page: "fill" });
 });
 
-app.post("/userDash", upload.single("idPic"), async (req, res) => {
-  if (req.body.vehicleType === "") {
-    req.body.vehicleType = null;
-  }
+app.post("/userDash",upload.single("idPic"),validateFill, async (req, res) => {
   let { name, purpose, adhaar, phone, compID, compName, vehicleType, vehicleNumber } = req.body;
 
   let createdUser = await userModel.create({
@@ -108,9 +115,6 @@ app.set("views", path.join(__dirname, "views"));
 app.use(express.json());
 app.engine("ejs", ejsMate);
 app.use(express.static(path.join(__dirname, "public")));
-app.get("/login", (req, res) => {
-  res.render("users/login.ejs");
-});
 
 app.listen(8080, () => {
   console.log("server is listening to port 8080");
