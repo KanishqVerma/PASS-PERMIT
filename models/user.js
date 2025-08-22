@@ -22,8 +22,8 @@ const userSchema = new mongoose.Schema(
     },
 
     idCardPic: {
-      type:String,
-      required:true // store image URL or file path,
+      type: String,
+      required: true, // store image URL or file path,
     },
 
     phone: {
@@ -33,7 +33,7 @@ const userSchema = new mongoose.Schema(
     },
 
     enrollmentOrCompanyId: {
-      type: Number,
+      type: String,
       required: true,
     },
 

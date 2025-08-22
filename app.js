@@ -6,8 +6,9 @@ const path = require("path");
 const ejsMate = require("ejs-mate");
 const signupModel = require("./models/signup");
 const userModel = require("./models/user");
+const hrModel = require("./models/hr");
 const dotenv = require("dotenv");
-const {fillSchema}=require("./schema.js");
+const { fillSchema } = require("./schema.js");
 const ExpressError = require("./utils/ExpressError.js");
 const wrapAsync = require("./utils/wrapAsync.js");
 
@@ -35,18 +36,18 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-const validateFill=(req,res,next)=>{
+const validateFill = (req, res, next) => {
   console.log(fillSchema.describe());
-console.log(req.body);
-  let {error}=fillSchema.validate(req.body);
-  
-  if(error){
-    let errMsg=error.details.map((el)=>el.message).join(",");
-    throw new ExpressError(404,errMsg);
-  }else{
+  console.log(req.body);
+  let { error } = fillSchema.validate(req.body);
+
+  if (error) {
+    let errMsg = error.details.map((el) => el.message).join(",");
+    throw new ExpressError(404, errMsg);
+  } else {
     next();
   }
-}
+};
 
 app.get("/home", (req, res) => {
   res.render("layouts/boilerplate.ejs", { page: "home" });
@@ -72,17 +73,66 @@ app.get("/contact", (req, res) => {
   res.render("includes/contact.ejs", { page: "contact" });
 });
 
-
-app.get("/hrDash", (req, res) => {
-  res.render("includes/hr_dashboard.ejs", { page: "hrDash" });
-});
-
 app.get("/hrfind", (req, res) => {
   res.render("includes/hr_find_user.ejs", { page: "hrfind" });
 });
 
 app.get("/hraprooval", (req, res) => {
   res.render("includes/hr_aproove.ejs", { page: "hraprooval" });
+});
+
+app.post("/login", async (req, res) => {
+  try {
+    let { email, password, enrollmentOrCompanyId } = req.body;
+    // 1 ) check if it is user or hr
+    let hr = await hrModel.findOne({ email: email });
+    if (hr) {
+      if (hr.password !== password || hr.companyID !== enrollmentOrCompanyId) {
+        return res.send("Invalid credentials");
+      }
+      res.render("includes/hr_dashboard.ejs", { page: "hrDash" });
+    }
+
+    // 2. If not HR, check in User collection
+    let existingUser = await signupModel.findOne({ email: email });
+
+    // check password (plain comparison for now, later use bcrypt)
+    if (existingUser) {
+      if (existingUser.Password !== password || existingUser.enrollmentOrCompanyId !== enrollmentOrCompanyId) {
+        return res.send("Invalid credentials");
+      }
+
+      // if user exists and password is correct → check if pass is already filled
+      let userDetails = await userModel.findOne({ enrollmentOrCompanyId: existingUser.enrollmentOrCompanyId });
+
+      if (userDetails) {
+        // already filled → go directly to dashboard
+        console.log(" Existing user login → Dashboard");
+        return res.render("includes/user_dashboard.ejs", { page: "userDash", user: userDetails });
+      } else {
+        // signed up but pass not filled yet → ask to fill pass
+        console.log("User login but no pass → redirect to fill pass");
+        return res.render("includes/fill-pass.ejs", { page: "fill", user: existingUser });
+      }
+    }
+    // 3. If not in either
+    return res.status(400).send("Email not registered");
+  } catch (err) {
+    console.error(err);
+  }
+});
+
+// NOW WHEN WE COME TO hr_find , i want to find user
+
+app.post("/hrfind", async (req, res) => {
+  let { visitorName, EnrollmentOrCompanyId, aadhaarLast4 } = req.body;
+  let visitor = await userModel.findOne({ adhaarLast4: aadhaarLast4 });
+  if (visitor) {
+    if (visitor.name !== visitorName || visitor.enrollmentOrCompanyId !== EnrollmentOrCompanyId) {
+      return res.send("User doesnt exist");
+    }
+    res.render("includes/hr_aproove.ejs", { page: "hraprooval", visitor: visitor });
+  }
 });
 
 app.post("/fill", async (req, res) => {
@@ -103,7 +153,7 @@ app.post("/fill", async (req, res) => {
   res.render("includes/fill-pass.ejs", { page: "fill" });
 });
 
-app.post("/userDash",upload.single("idPic"),validateFill, async (req, res) => {
+app.post("/userDash", upload.single("idPic"), validateFill, async (req, res) => {
   let { name, purpose, adhaar, phone, compID, compName, vehicleType, vehicleNumber } = req.body;
 
   let createdUser = await userModel.create({
