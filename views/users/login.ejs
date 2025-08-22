@@ -4,27 +4,27 @@
 <div class="login-page-body"></div>
   <div class="login-container">
     <h2 class="mb-3 text-center">Login</h2>
-    <form action="/fill">
-        <div class="mb-3">
+    <form action="/login" method="POST">
+        <!-- <div class="mb-3">
         <label for="username" class="form-label">Username</label>
         <input type="username" class="form-control" id="username" placeholder="Enter username">
-      </div>
+      </div> -->
 
       <div class="mb-3">
         <label for="email" class="form-label">Email address</label>
-        <input type="email" class="form-control" id="email" placeholder="Enter email">
+        <input type="email" name="email" class="form-control" id="email" placeholder="Enter email">
       </div>
 
 
       <div class="mb-3">
         <label for="companyID" class="form-label">CompanyId</label>
-        <input type="companyID" class="form-control" id="companyID" placeholder="Enter CompanyId">
+        <input type="companyID" name="enrollmentOrCompanyId" class="form-control" id="companyID" placeholder="Enter CompanyId">
       </div>
 
 
       <div class="mb-3">
         <label for="password" class="form-label">Password</label>
-        <input type="password" class="form-control" id="password" placeholder="Password">
+        <input type="password" name="password" class="form-control" id="password" placeholder="Password">
       </div>
 
       <div class="d-grid mb-3">

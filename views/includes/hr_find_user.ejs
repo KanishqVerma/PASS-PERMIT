@@ -1,33 +1,31 @@
 <% layout('layouts/boilerplate') %>
 
-<div class="container d-flex justify-content-center align-items-center" style="min-height: 100vh;">
-  <div class="card shadow-lg rounded theme-card p-5" style="max-width: 700px; width: 100%; font-size: 1.2rem;">
-    <h1 class="mb-4 text-center theme-title" style="font-size: 2rem;">Issue a Pass</h1>
-    
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 100vh">
+  <div class="card shadow-lg rounded theme-card p-5" style="max-width: 700px; width: 100%; font-size: 1.2rem">
+    <h1 class="mb-4 text-center theme-title" style="font-size: 2rem">Issue a Pass</h1>
+
     <!-- Form -->
-    <form method="POST" action="/hraprooval">
-      
+    <form method="POST" action="/hrfind">
       <!-- Visitor Name -->
       <div class="mb-4">
-        <label for="visitorName" class="form-label fw-bold" style="font-size: 1.1rem;">Visitor Name</label>
-        <input type="text" class="form-control form-control-lg" id="visitorName" name="visitorName" 
-               placeholder="Enter visitor's full name" required>
+        <label for="visitorName" class="form-label fw-bold" style="font-size: 1.1rem">Visitor Name</label>
+        <input type="text" class="form-control form-control-lg" id="visitorName" name="visitorName" placeholder="Enter visitor's full name" required />
       </div>
-
+      <!-- EnrollmentOrCompanyId -->
+      <div class="mb-4">
+        <label for="EnrollmentOrCompanyId" class="form-label fw-bold" style="font-size: 1.1rem">Enrollment/CompanyId</label>
+        <input type="text" class="form-control form-control-lg" id="EnrollmentOrCompanyId" name="EnrollmentOrCompanyId" placeholder="Enter visitor's EnrollmentID" required />
+      </div>
       <!-- Aadhaar last 4 digits -->
       <div class="mb-4">
-        <label for="aadhaarLast4" class="form-label fw-bold" style="font-size: 1.1rem;">Aadhaar Card (Last 4 digits)</label>
-        <input type="text" class="form-control form-control-lg" id="aadhaarLast4" name="aadhaarLast4" 
-               placeholder="XXXX" maxlength="4" pattern="\d{4}" required>
+        <label for="aadhaarLast4" class="form-label fw-bold" style="font-size: 1.1rem">Aadhaar Card (Last 4 digits)</label>
+        <input type="text" class="form-control form-control-lg" id="aadhaarLast4" name="aadhaarLast4" placeholder="XXXX" maxlength="4" pattern="\d{4}" required />
       </div>
 
       <!-- Find User Button -->
       <div class="text-center mt-4">
-        <button type="submit" class="btn btn-primary btn-lg px-5 py-2">
-          Find User
-        </button>
+        <button type="submit" class="btn btn-primary btn-lg px-5 py-2">Find User</button>
       </div>
-
     </form>
   </div>
 </div>
