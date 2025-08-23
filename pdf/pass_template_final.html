@@ -1,0 +1,162 @@
+<!-- <!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: 'DejaVu Sans', sans-serif; margin: 40px; }
+        .container { max-width: 800px; margin: auto; border: 1px solid #ccc; padding: 20px; }
+        .header-img { width: 100%; margin-bottom: 40px; }
+        .meta-info { display: flex; justify-content: space-between; margin-top: -10px; }
+        .content p { line-height: 1.6; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid black; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        
+        /* New styles for the footer */
+        .footer {
+            margin-top: 80px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        .qr-code img {
+            width: 120px;
+            height: 120px;
+        }
+        .signature-field {
+            width: 250px;
+            text-align: center;
+        }
+        .signature-field hr {
+            border: 0;
+            border-top: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="data:image/jpeg;base64,{{headerImage}}" alt="Header" class="header-img">
+        <br>
+        <div class="meta-info">
+            <span></span>
+            <span>Date: {{issueDate}}</span>
+        </div>
+        <div class="content">
+            <h3 style="text-align:center;"><u>TO WHOMSOEVER IT MAY CONCERN</u></h3>
+            <p>
+                The Following visitor/visitors will be visiting the IT Division, NR office for the
+                official purpose.
+            </p>
+            <p>
+                The details of visitor/visitors are being listed below. It is requested
+                that he/she/they may be issued entry permission to old NATS & new ATC Tower
+                complex Building.
+            </p>
+            <p><b>Validity: {{validity}}. Expiry Date: {{expiryDate}}</b></p>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>S. No.</th>
+                    <th>Name of the visitor (Mr./Ms.)</th>
+                    <th>Govt. ID details/ Vehicle No</th>
+                    <th>Name of company (If applicable)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each visitors}}
+                <tr>
+                    <td>{{this.s_no}}</td>
+                    <td>{{this.name}}</td>
+                    <td>{{this.govt_id}}</td>
+                    <td>{{this.company}}</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+
+        <div class="footer">
+            <div class="qr-code">
+                <img src="{{qrCodeImage}}" alt="QR Code">
+            </div>
+            <div class="signature-field">
+                <hr>
+                <p>Authorized Signatory</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: 'DejaVu Sans', sans-serif; margin: 40px; }
+        .container { max-width: 800px; margin: auto; border: 1px solid #ccc; padding: 20px; }
+        .header-img { width: 100%; margin-bottom: 20px; }
+        .meta-info { display: flex; justify-content: space-between; margin-top: -10px; }
+        .content p { line-height: 1.6; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid black; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .footer { margin-top: 40px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .qr-code img { width: 120px; height: 120px; }
+        .signature-field { width: 250px; text-align: center; }
+        .signature-field hr { border: 0; border-top: 1px solid black; margin-bottom: 15px; }
+        
+        .stamp-image {
+            width: 240px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="data:image/jpeg;base64,{{headerImage}}" alt="Header" class="header-img">
+        <div class="meta-info">
+            <span></span>
+            <span>दिनांक: {{issueDate}}</span>
+        </div>
+        <div class="content">
+            <h3 style="text-align:center;">TO WHOMSOEVER IT MAY CONCERN</h3>
+            <p>The Following visitor/visitors will be visiting the <strong>{{department}}</strong> for the official purpose.</p>
+            <p>The details of visitor/visitors are being listed below. It is requested that he/she/they may be issued entry permission to old NATS & new ATC Tower complex Building.</p>
+            <p><b>Validity: {{validity}}. Expiry Date: {{expiryDate}}</b></p>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>S. No.</th>
+                    <th>Name of the visitor (Mr./Ms.)</th>
+                    <th>Govt. ID details/ Vehicle No</th>
+                    <th>Name of company (If applicable)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each visitors}}
+                <tr>
+                    <td>{{this.s_no}}</td>
+                    <td>{{this.name}}</td>
+                    <td>{{this.govt_id}}</td>
+                    <td>{{this.company}}</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+
+        <div class="footer">
+            <div class="qr-code">
+                <img src="{{qrCodeImage}}" alt="QR Code">
+            </div>
+            <div class="signature-field">
+                <img src="data:image/jpeg;base64,{{stampImage}}" alt="Stamp" class="stamp-image">
+                <hr>
+                <p>Authorized Signatory</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
