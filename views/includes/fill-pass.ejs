@@ -4,11 +4,12 @@
   <div class="card p-4 shadow-lg rounded theme-card">
     <h2 class="mb-4 text-center theme-title">Pass Details Form</h2>
 
-    <form method="POST" action="/userDash" enctype="multipart/form-data">
+    <form method="POST" action="/userDash" enctype="multipart/form-data" class="needs-validation" novalidate>
       <!-- Pass Details -->
       <div class="mb-3">
         <label class="form-label">Your Name</label>
         <input type="text" class="form-control" name="name" required />
+        <div class="invalid-feedback">please enter your name</div>
       </div>
 
       <div class="mb-3">
@@ -22,6 +23,7 @@
           <option>Training</option>
           <option>Other</option>
         </select>
+        <div class="invalid-feedback">please select purpose to visit</div>
       </div>
 
       <div class="mb-3">
@@ -29,28 +31,33 @@
         <div class="input-group">
           <span class="input-group-text">xxxx-xxxx-</span>
           <input type="number" class="form-control" name="adhaar" maxlength="4" oninput="this.value=this.value.slice(0,4)" required />
+          <div class="invalid-feedback">please enter Aadhaar last 4 digits</div>
         </div>
       </div>
 
       <div class="mb-3">
         <label class="form-label">Upload ID Card Picture</label>
-        <input type="file" class="form-control" name="idPic" accept="image/*" required />
+        <input type="file" class="form-control" name="idPic" />
+        <div class="invalid-feedback">please Upload your Id card picture</div>
       </div>
 
       <div class="row g-3 mb-3">
         <div class="col-md-6">
           <label class="form-label">Phone Number</label>
           <input type="tel" class="form-control" name="phone" required />
+          <div class="invalid-feedback">please enter your phone number</div>
         </div>
         <div class="col-md-6">
           <label class="form-label">Enrollment/Company Id Number</label>
           <input type="number" class="form-control" name="compID" required />
+          <div class="invalid-feedback">please enter your Enrollment/Company Id number</div>
         </div>
       </div>
 
       <div class="mb-3">
         <label class="form-label">College/Company Name</label>
         <input type="text" class="form-control" name="compName" required />
+        <div class="invalid-feedback">please enter your College/Company name</div>
       </div>
 
       <!-- Vehicle Section -->

@@ -17,9 +17,12 @@
   "homepage": "https://github.com/Its-Adarshkumar/PASS-PERMIT#readme",
   "description": "",
   "dependencies": {
+    "dotenv": "^17.2.1",
     "ejs": "^3.1.10",
     "ejs-mate": "^4.0.0",
     "express": "^5.1.0",
-    "mongoose": "^8.17.0"
+    "joi": "^18.0.0",
+    "mongoose": "^8.17.0",
+    "multer": "^2.0.2"
   }
 }

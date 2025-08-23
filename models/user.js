@@ -1,3 +1,4 @@
+const { string, required } = require("joi");
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
@@ -21,8 +22,8 @@ const userSchema = new mongoose.Schema(
     },
 
     idCardPic: {
-      type: String, // store image URL or file path
-      required: true,
+      type: String,
+      required: true, // store image URL or file path,
     },
 
     phone: {
@@ -43,8 +44,9 @@ const userSchema = new mongoose.Schema(
 
     vehicleType: {
       type: String,
-      enum: ["Car", "Bike", "Scooter", "Cycle", "Other"],
+      enum: ["Car", "Bike", "Scooter", "Cycle", "Other",""],
       required: false,
+      default: null,
     },
 
     vehicleNumber: {
