@@ -7,7 +7,7 @@
     <form action="/fill" method="POST">
       <div class="mb-3">
         <label for="email" class="form-label">Email Address</label>
-        <input type="email" class="form-control" id="email" name="email" required />
+        <input type="email" class="form-control" placeholder="Enter email" id="email" name="email" required />
       </div>
 
       <div class="mb-3">
@@ -17,15 +17,19 @@
 
       <div class="mb-3">
         <label for="password" class="form-label">Create new Password</label>
-        <input type="password" class="form-control" id="password" name="password" placeholder="new Password" required />
+        <input type="password" class="form-control" id="password" name="password" placeholder="New Password" required />
       </div>
 
       <div class="mb-3">
         <label for="confirmPassword" class="form-label">Confirm Password</label>
-        <input type="password" class="form-control" id="confirmPassword" placeholder="confirm Password" name="confirmPassword" required />
+        <input type="password" class="form-control" id="confirmPassword" placeholder="Confirm Password" name="confirmPassword" required />
       </div>
 
       <button type="submit" class="btn text-white w-100" style="background-color: #0059b3">Signup</button>
     </form>
+
+    <p class="text-center mt-3">
+      Already signed up? <a href="/login" class="text-decoration-none" style="color: #0059b3;">Login</a>
+    </p>
   </div>
 </div>
