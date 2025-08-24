@@ -21,21 +21,21 @@
       <div class="card border-0 shadow-sm text-center p-4">
         <i class="fa-solid fa-list-check text-primary fs-1 mb-3"></i>
         <h5 class="fw-bold mb-2">Total Passes</h5>
-        <p class="fs-4 fw-semibold text-dark mb-0">12</p>
+        <p class="fs-4 fw-semibold text-dark mb-0"><%=totalPasses%></p>
       </div>
     </div>
     <div class="col-md-4">
       <div class="card border-0 shadow-sm text-center p-4">
         <i class="fa-solid fa-circle-check text-success fs-1 mb-3"></i>
         <h5 class="fw-bold mb-2">Active Passes</h5>
-        <p class="fs-4 fw-semibold text-dark mb-0">9</p>
+        <p class="fs-4 fw-semibold text-dark mb-0"><%= activePasses %></p>
       </div>
     </div>
     <div class="col-md-4">
       <div class="card border-0 shadow-sm text-center p-4">
         <i class="fa-solid fa-circle-xmark text-danger fs-1 mb-3"></i>
         <h5 class="fw-bold mb-2">Expired Passes</h5>
-        <p class="fs-4 fw-semibold text-dark mb-0">3</p>
+        <p class="fs-4 fw-semibold text-dark mb-0"><%= expiredPasses %></p>
       </div>
     </div>
   </div>
@@ -60,26 +60,20 @@
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td class="py-3">Security Department</td>
-              <td class="py-3">Admin 1</td>
-              <td class="py-3"><span class="badge bg-success px-3 py-2">Active</span></td>
+            <% passes.forEach(p=>{ %>
+              <tr>
+              <td class="py-3"><%= p.department %></td>
+              <td class="py-3"><%= p.issuedBy %></td>
+              <td class="py-3"><span class="badge px-3 py-2 <%=p.status === 'Active'?'bg-success':'bg-danger'%>"><%= p.status%></span></td>
               <td class="py-3 text-center">
                 <a href="#" class="btn btn-sm btn-primary rounded-pill px-3 py-2">
                   <i class="fa-solid fa-download me-1"></i> Download
                 </a>
               </td>
             </tr>
-            <tr>
-              <td class="py-3">HR Department</td>
-              <td class="py-3">Admin 2</td>
-              <td class="py-3"><span class="badge bg-danger px-3 py-2">Expired</span></td>
-              <td class="py-3 text-center">
-                <a href="#" class="btn btn-sm btn-secondary rounded-pill px-3 py-2 disabled">
-                  <i class="fa-solid fa-download me-1"></i> Download
-                </a>
-              </td>
-            </tr>
+           <% }) %>
+            
+           
           </tbody>
         </table>
       </div>
@@ -89,3 +83,4 @@
 </div>
 
 </div>
+
