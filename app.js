@@ -7,11 +7,12 @@ const ejsMate = require("ejs-mate");
 const signupModel = require("./models/signup");
 const userModel = require("./models/user");
 const hrModel = require("./models/hr");
+const passModel = require("./models/pass");
 const dotenv = require("dotenv");
 const { fillSchema } = require("./schema.js");
 const ExpressError = require("./utils/ExpressError.js");
 const wrapAsync = require("./utils/wrapAsync.js");
-
+app.use(express.json());
 dotenv.config();
 app.use(express.urlencoded({ extended: true }));
 mongoose
@@ -90,7 +91,8 @@ app.post("/login", async (req, res) => {
       if (hr.password !== password || hr.companyID !== enrollmentOrCompanyId) {
         return res.send("Invalid credentials");
       }
-      res.render("includes/hr_dashboard.ejs", { page: "hrDash" });
+      res.redirect(`/hr/dashboard/${hr._id}`);
+      // res.render("includes/hr_dashboard.ejs", { page: "hrDash" ,hrId:hr._id});
     }
 
     // 2. If not HR, check in User collection
@@ -108,7 +110,8 @@ app.post("/login", async (req, res) => {
       if (userDetails) {
         // already filled → go directly to dashboard
         console.log(" Existing user login → Dashboard");
-        return res.render("includes/user_dashboard.ejs", { page: "userDash", user: userDetails });
+        return res.redirect(`/dashboard/${userDetails._id}`);
+        // return res.render("includes/user_dashboard.ejs", { page: "userDash", user: userDetails });
       } else {
         // signed up but pass not filled yet → ask to fill pass
         console.log("User login but no pass → redirect to fill pass");
@@ -120,6 +123,21 @@ app.post("/login", async (req, res) => {
   } catch (err) {
     console.error(err);
   }
+});
+
+app.get("/hr/dashboard/:id", async (req, res) => {
+  let hr_id = req.params.id;
+  const queryHrId = new mongoose.Types.ObjectId(hr_id);
+  // let hr = await hrModel.findById();
+
+  // fetch all passes for this HR
+  let passes = await passModel.find({ hrId: queryHrId }).populate("userId", "name");
+
+  const totalPasses = await passModel.countDocuments({ hrId: queryHrId });
+  const activePasses = await passModel.countDocuments({ hrId: queryHrId, status: "Active" });
+  const expiredPasses = await passModel.countDocuments({ hrId: queryHrId, status: "Expired" });
+
+  res.render("includes/hr_dashboard.ejs", { page: "hrDash", totalPasses, activePasses, expiredPasses, passes });
 });
 
 // NOW WHEN WE COME TO hr_find , i want to find user
@@ -136,6 +154,8 @@ app.post("/hrfind", async (req, res) => {
 });
 
 app.post("/fill", async (req, res) => {
+  // this fxn is not bieng used rn
+  //
   let { email, compID, password } = req.body;
   // check if user already exists
   let existingUser = await signupModel.findOne({ email: email });
@@ -150,10 +170,73 @@ app.post("/fill", async (req, res) => {
     Password: password,
   });
   console.log("✅User saved");
+
   res.render("includes/fill-pass.ejs", { page: "fill" });
+  // return res.redirect(`/dashboard/${userDetails._id}`);
 });
 
+// TRIAL , hehe working well
+
+app.post("/signup", async (req, res) => {
+  let { email, compID, password } = req.body;
+  // check if user already exists
+  let existingUser = await signupModel.findOne({ email: email });
+  if (existingUser) {
+    console.log("User already exists");
+    res.send("This email already exists. Please login.");
+  }
+  // else create new user
+  let newuser = await signupModel.create({
+    email: email,
+    enrollmentOrCompanyId: compID,
+    Password: password,
+  });
+  console.log("✅User saved");
+  res.redirect(`/fill/${newuser._id}`);
+});
+
+app.get("/fill/:id", (req, res) => {
+  const userId = req.params.id; // get id from URL
+
+  res.render("includes/fill-pass", { page: "fill", userId });
+});
+
+app.post("/fill-pass/:id", upload.single("idPic"), validateFill, async (req, res) => {
+  const userId = req.params.id; // directly from URL param
+
+  let { name, purpose, adhaar, phone, compID, compName, vehicleType, vehicleNumber } = req.body;
+  let createdUser = await userModel.create({
+    name,
+    purpose,
+    adhaarLast4: adhaar,
+    idCardPic: req.file.filename,
+    phone,
+    enrollmentOrCompanyId: compID,
+    collegeOrCompanyName: compName,
+    vehicleType,
+    vehicleNumber,
+  });
+  console.log("User added");
+  return res.redirect(`/dashboard/${createdUser._id}`);
+});
+
+app.get("/dashboard/:id", async (req, res) => {
+  const user_Id = req.params.id; // string url
+
+  const queryUserId = new mongoose.Types.ObjectId(user_Id);
+
+  // fetch user details
+  const userDetails = await userModel.findById(queryUserId);
+
+  const totalPasses = await passModel.countDocuments({ userId: queryUserId });
+  const activePasses = await passModel.countDocuments({ userId: queryUserId, status: "Active" });
+  const expiredPasses = await passModel.countDocuments({ userId: queryUserId, status: "Expired" });
+
+  const passes = await passModel.find({ userId: queryUserId });
+  return res.render("includes/user_dashboard.ejs", { page: "userDash", user: userDetails, totalPasses, activePasses, expiredPasses, passes });
+});
 app.post("/userDash", upload.single("idPic"), validateFill, async (req, res) => {
+  // this fxn is not bieng used rn
   let { name, purpose, adhaar, phone, compID, compName, vehicleType, vehicleNumber } = req.body;
 
   let createdUser = await userModel.create({
@@ -174,7 +257,6 @@ app.post("/userDash", upload.single("idPic"), validateFill, async (req, res) => 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-app.use(express.json());
 app.engine("ejs", ejsMate);
 app.use(express.static(path.join(__dirname, "public")));
 

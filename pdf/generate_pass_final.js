@@ -70,6 +70,7 @@ const handlebars = require('handlebars');
 const puppeteer = require('puppeteer');
 const fs = require('fs/promises');
 const qrcode = require('qrcode');
+const User = require('./models/user.js');
 
 /**
  * Main function to generate the gate pass.
@@ -124,7 +125,7 @@ async function generatePass(passData) {
     const validityInMonths = 2;
     const visitorData = {
         s_no: 1,
-        name: 'Anuj Kumar',
+        name: User.name,
         govt_id: '268897750258',
         company: 'N/A'
     };
