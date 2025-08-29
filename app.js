@@ -12,6 +12,8 @@ const dotenv = require("dotenv");
 const { fillSchema } = require("./schema.js");
 const ExpressError = require("./utils/ExpressError.js");
 const wrapAsync = require("./utils/wrapAsync.js");
+const { generatePass } = require("./pdf/generate_pass_final.js"); // if you moved it to a separate file
+
 app.use(express.json());
 dotenv.config();
 app.use(express.urlencoded({ extended: true }));
@@ -252,6 +254,133 @@ app.post("/userDash", upload.single("idPic"), validateFill, async (req, res) => 
   });
   console.log("User added");
   res.render("includes/user_dashboard.ejs", { page: "userDash", user: createdUser });
+});
+
+// app.post("/download-pass", async (req, res) => {
+//   try {
+//    const { userId, validFrom, validUpto } = req.body;
+//     // const { userId } = req.body; // HR ke click se frontend se bhejna padega
+//     // const passId = req.params.passId;
+//     // const pass = await passModel.findById(passId).populate("userId");
+
+//     // if (!pass) {
+//     //   return res.status(404).send("Pass not found");
+//     // }
+
+//       // yeh user DB se fetch karlo
+//     const user = await userModel.findById(userId);
+//     if (!user) {
+//       return res.status(404).send("User not found");
+//     }
+//     // Format dates
+//     const formatDate = (date) => `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}.${date.getFullYear()}`;
+
+//     const issueDate = pass.issueDate || new Date();
+//     const expiryDate = pass.expiryDate || new Date();
+
+//     // Build passData for generatePass
+//     const passData = {
+//       department: "IT Division, NR Office",
+//       issueDate: formatDate(issueDate),
+//       expiryDate: formatDate(expiryDate),
+//       validity: "2 Months", // or calculate dynamically
+//       visitors: [
+//         {
+//           s_no: 1,
+//           name: user.name,
+//           govt_id: user.adhaarLast4,
+//           company:user.collegeOrCompanyName || "N/A",
+//         },
+//       ],
+//     };
+
+//     const pdfBuffer = await generatePass(passData);
+
+//     // Send as file download
+//     res.set({
+//       "Content-Type": "application/pdf",
+//       "Content-Disposition": `attachment; filename="Gate_Pass_${user.name.replace(/ /g, "_")}.pdf"`,
+//     });
+//     res.send(pdfBuffer);
+//   } catch (error) {
+//     console.error("Error downloading pass:", error);
+//     res.status(500).send("Error generating pass");
+//   }
+// });
+
+app.post("/download-pass", async (req, res) => {
+  try {
+    const { userId, validFrom, validUpto } = req.body;
+
+    // basic validations
+    if (!userId || !validFrom || !validUpto) {
+      return res.status(400).send("userId, validFrom, validUpto are required");
+    }
+
+    const user = await userModel.findById(userId).lean();
+    if (!user) return res.status(404).send("User not found");
+
+    // parse dates
+    // const issueDate = new Date(validFrom);
+    // const expiryDate = new Date(validUpto);
+    const issueDate = new Date(`${validFrom}T00:00:00`);
+    const expiryDate = new Date(`${validUpto}T23:59:59`);
+    if (isNaN(issueDate) || isNaN(expiryDate)) {
+      return res.status(400).send("Invalid dates");
+    }
+    if (expiryDate < issueDate) {
+      return res.status(400).send("Valid Upto must be after Valid From");
+    }
+
+    // helpers
+    const formatDate = (date) => `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}.${date.getFullYear()}`;
+
+    const diffDays = Math.ceil((expiryDate - issueDate) / (1000 * 60 * 60 * 24));
+
+    // build data for PDF
+    const passData = {
+      department: "IT Division, NR Office",
+      issueDate: formatDate(issueDate),
+      expiryDate: formatDate(expiryDate),
+      validity: `${diffDays} Days`,
+      visitors: [
+        {
+          s_no: 1,
+          name: user.name,
+          govt_id: user.adhaarLast4,
+          company: user.collegeOrCompanyName || "N/A",
+        },
+      ],
+    };
+
+    const pdfBuffer = await generatePass(passData);
+
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename="Gate_Pass_${user.name.replace(/ /g, "_")}.pdf"`,
+    });
+    res.send(pdfBuffer);
+  } catch (error) {
+    console.error("Error downloading pass:", error);
+    res.status(500).send("Error generating pass");
+  }
+});
+
+// trial 27aug
+
+app.get("/api/pass/download-pass/:userId", async (req, res) => {
+  const { userId } = req.params;
+
+  // find the approved pass of this user
+  const pass = await passModel.findOne({ userId, status: "approved" }).populate("userId");
+
+  if (!pass) return res.status(404).send("No approved pass found");
+
+  // generate PDF and send
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename=pass_${userId}.pdf`);
+
+  // your pdf creation logic here...
 });
 
 app.set("view engine", "ejs");
