@@ -17,14 +17,19 @@
   "homepage": "https://github.com/Its-Adarshkumar/PASS-PERMIT#readme",
   "description": "",
   "dependencies": {
+    "connect-flash": "^0.1.1",
     "dotenv": "^17.2.1",
     "ejs": "^3.1.10",
     "ejs-mate": "^4.0.0",
     "express": "^5.1.0",
+    "express-session": "^1.18.2",
+    "handlebars": "^4.7.8",
     "joi": "^18.0.0",
     "mongoose": "^8.17.0",
-    "handlebars": "^4.7.8",
     "multer": "^2.0.2",
+    "passport": "^0.7.0",
+    "passport-local": "^1.0.0",
+    "passport-local-mongoose": "^8.0.0",
     "puppeteer": "^24.16.2",
     "qrcode": "^1.5.4"
   }
