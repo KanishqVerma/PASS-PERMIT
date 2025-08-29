@@ -70,7 +70,9 @@ const handlebars = require('handlebars');
 const puppeteer = require('puppeteer');
 const fs = require('fs/promises');
 const qrcode = require('qrcode');
-const User = require('./models/user.js');
+const User = require('../models/user');
+const HR = require('../models/hr');
+ const path = require("path");
 
 /**
  * Main function to generate the gate pass.
@@ -87,14 +89,20 @@ async function generatePass(passData) {
         const qrCodeImage = await qrcode.toDataURL(qrCodeData);
 
         // Read the stamp image
-        const stampImage = await fs.readFile('stamp.jpg', 'base64');
+        // const stampImage = await fs.readFile('stamp.jpg', 'base64');
+        const stampImage = await fs.readFile(path.join(__dirname, "stamp.jpg"), "base64");
+        const templateHtml = await fs.readFile(
+            path.join(__dirname, "pass_template_final.html"),
+            "utf-8"
+        );
+
 
         // Add generated images to the data object
         passData.qrCodeImage = qrCodeImage;
         passData.stampImage = stampImage;
         
         // Compile the HTML template with the final data
-        const templateHtml = await fs.readFile('pass_template_final.html', 'utf-8');
+        // const templateHtml = await fs.readFile('pass_template_final.html', 'utf-8');
         const template = handlebars.compile(templateHtml);
         const finalHtml = template(passData);
 
@@ -138,7 +146,14 @@ async function generatePass(passData) {
     const formatDate = (date) => `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}.${date.getFullYear()}`;
 
     // 3. Read the header image and prepare the data object
-    const headerImage = await fs.readFile('pass_header.jpg', 'base64');
+
+    // const headerImage = await fs.readFile('pass_header.jpg', 'base64');
+   
+        const headerImage = await fs.readFile(
+            path.join(__dirname, "pass_header.jpg"),
+            "base64"
+            );
+
     
     const passData = {
         headerImage: headerImage,
