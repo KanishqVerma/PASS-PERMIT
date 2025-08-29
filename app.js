@@ -349,6 +349,8 @@ app.post("/download-pass", async (req, res) => {
           name: user.name,
           govt_id: user.adhaarLast4,
           company: user.collegeOrCompanyName || "N/A",
+          vehicleType: user.vehicleType,
+          vehicleNumber: user.vehicleNumber,
         },
       ],
     };
