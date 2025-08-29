@@ -12,7 +12,15 @@ const dotenv = require("dotenv");
 const { fillSchema } = require("./schema.js");
 const ExpressError = require("./utils/ExpressError.js");
 const wrapAsync = require("./utils/wrapAsync.js");
+
 const { generatePass } = require("./pdf/generate_pass_final.js"); // if you moved it to a separate file
+
+const Session=require("express-session");
+const passport=require("passport");
+const LocalStrategy=require("passport-local");
+const flash=require("connect-flash");
+
+
 
 app.use(express.json());
 dotenv.config();
@@ -51,6 +59,27 @@ const validateFill = (req, res, next) => {
     next();
   }
 };
+
+app.use(Session({
+  secret:"mysupersecretstring",
+  resave:false,
+  saveUninitialized:true,
+}));
+
+app.use(flash());
+
+app.use((req,res,next)=>{
+    res.locals.success=req.flash("success");
+    res.locals.error=req.flash("error");
+    res.locals.currUser=req.user;
+    next();
+});
+app.use(passport.initialize());
+app.use(passport.session());
+passport.use(new LocalStrategy(signupModel.authenticate()));
+passport.serializeUser(signupModel.serializeUser());
+passport.deserializeUser(signupModel.deserializeUser());
+
 
 app.get("/home", (req, res) => {
   res.render("layouts/boilerplate.ejs", { page: "home" });
@@ -180,22 +209,22 @@ app.post("/fill", async (req, res) => {
 // TRIAL , hehe working well
 
 app.post("/signup", async (req, res) => {
-  let { email, compID, password } = req.body;
-  // check if user already exists
-  let existingUser = await signupModel.findOne({ email: email });
-  if (existingUser) {
-    console.log("User already exists");
-    res.send("This email already exists. Please login.");
-  }
-  // else create new user
-  let newuser = await signupModel.create({
+try{
+    let { email, compID, password } = req.body;
+    let newUser = new signupModel({
+    username:email,
     email: email,
     enrollmentOrCompanyId: compID,
-    Password: password,
   });
-  console.log("✅User saved");
-  res.redirect(`/fill/${newuser._id}`);
-});
+  const registerUser=await signupModel.register(newUser,password);
+  console.log(registerUser);
+  req.flash("success","Welcome to the Pass Management System");
+  res.redirect(`/fill/${newUser._id}`);
+}catch(err){{
+  req.flash("error",err.message);
+  res.redirect("/signup");
+}
+}});
 
 app.get("/fill/:id", (req, res) => {
   const userId = req.params.id; // get id from URL
