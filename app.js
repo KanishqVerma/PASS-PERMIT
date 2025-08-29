@@ -12,7 +12,15 @@ const dotenv = require("dotenv");
 const { fillSchema } = require("./schema.js");
 const ExpressError = require("./utils/ExpressError.js");
 const wrapAsync = require("./utils/wrapAsync.js");
-const { generatePass } = require("./pdf/generate_pass_final.js");  // if you moved it to a separate file
+
+const { generatePass } = require("./pdf/generate_pass_final.js"); // if you moved it to a separate file
+
+const Session=require("express-session");
+const passport=require("passport");
+const LocalStrategy=require("passport-local");
+const flash=require("connect-flash");
+
+
 
 app.use(express.json());
 dotenv.config();
@@ -51,6 +59,27 @@ const validateFill = (req, res, next) => {
     next();
   }
 };
+
+app.use(Session({
+  secret:"mysupersecretstring",
+  resave:false,
+  saveUninitialized:true,
+}));
+
+app.use(flash());
+
+app.use((req,res,next)=>{
+    res.locals.success=req.flash("success");
+    res.locals.error=req.flash("error");
+    res.locals.currUser=req.user;
+    next();
+});
+app.use(passport.initialize());
+app.use(passport.session());
+passport.use(new LocalStrategy(signupModel.authenticate()));
+passport.serializeUser(signupModel.serializeUser());
+passport.deserializeUser(signupModel.deserializeUser());
+
 
 app.get("/home", (req, res) => {
   res.render("layouts/boilerplate.ejs", { page: "home" });
@@ -180,22 +209,22 @@ app.post("/fill", async (req, res) => {
 // TRIAL , hehe working well
 
 app.post("/signup", async (req, res) => {
-  let { email, compID, password } = req.body;
-  // check if user already exists
-  let existingUser = await signupModel.findOne({ email: email });
-  if (existingUser) {
-    console.log("User already exists");
-    res.send("This email already exists. Please login.");
-  }
-  // else create new user
-  let newuser = await signupModel.create({
+try{
+    let { email, compID, password } = req.body;
+    let newUser = new signupModel({
+    username:email,
     email: email,
     enrollmentOrCompanyId: compID,
-    Password: password,
   });
-  console.log("✅User saved");
-  res.redirect(`/fill/${newuser._id}`);
-});
+  const registerUser=await signupModel.register(newUser,password);
+  console.log(registerUser);
+  req.flash("success","Welcome to the Pass Management System");
+  res.redirect(`/fill/${newUser._id}`);
+}catch(err){{
+  req.flash("error",err.message);
+  res.redirect("/signup");
+}
+}});
 
 app.get("/fill/:id", (req, res) => {
   const userId = req.params.id; // get id from URL
@@ -255,59 +284,6 @@ app.post("/userDash", upload.single("idPic"), validateFill, async (req, res) => 
   console.log("User added");
   res.render("includes/user_dashboard.ejs", { page: "userDash", user: createdUser });
 });
-
-
-app.post("/download-pass", async (req, res) => {
-  try {
-    const passId = req.params.passId;
-    const pass = await passModel.findById(passId).populate("userId");
-
-    // if (!pass) {
-    //   return res.status(404).send("Pass not found");
-    // }
-
-    // Format dates
-    const formatDate = (date) =>
-      `${String(date.getDate()).padStart(2, "0")}.${String(
-        date.getMonth() + 1
-      ).padStart(2, "0")}.${date.getFullYear()}`;
-
-    const issueDate = pass.issueDate || new Date();
-    const expiryDate = pass.expiryDate || new Date();
-
-    // Build passData for generatePass
-    const passData = {
-      department: "IT Division, NR Office",
-      issueDate: formatDate(issueDate),
-      expiryDate: formatDate(expiryDate),
-      validity: "2 Months", // or calculate dynamically
-      visitors: [
-        {
-          s_no: 1,
-          name: pass.userId.name,
-          govt_id: pass.userId.adhaarLast4,
-          company: pass.userId.collegeOrCompanyName || "N/A",
-        },
-      ],
-    };
-
-    const pdfBuffer = await generatePass(passData);
-
-    // Send as file download
-    res.set({
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="Gate_Pass_${pass.userId.name.replace(
-        " ",
-        "_"
-      )}.pdf"`,
-    });
-    res.send(pdfBuffer);
-  } catch (error) {
-    console.error("Error downloading pass:", error);
-    res.status(500).send("Error generating pass");
-  }
-});
-
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));

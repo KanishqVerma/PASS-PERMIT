@@ -117,13 +117,20 @@
         <img src="data:image/jpeg;base64,{{headerImage}}" alt="Header" class="header-img">
         <div class="meta-info">
             <span></span>
-            <span>Date: {{issueDate}}</span>
+            <span>दिनांक: {{date}}</span>
         </div>
         <div class="content">
             <h3 style="text-align:center;">TO WHOMSOEVER IT MAY CONCERN</h3>
             <p>The Following visitor/visitors will be visiting the <strong>{{department}}</strong> for the official purpose.</p>
             <p>The details of visitor/visitors are being listed below. It is requested that he/she/they may be issued entry permission to old NATS & new ATC Tower complex Building.</p>
-            <p><b>Validity: {{validity}}. Expiry Date: {{expiryDate}}</b></p>
+             <table style="width: 100%;">
+                <tr>
+                    <td>Issue Date : {{issueDate}}</td>
+                    <td style="text-align: right;">Expiry Date : {{expiryDate}}</td>
+                </tr>
+            </table>
+
+            <p><b>Validity: {{validity}}</p>
         </div>
 
         <table>
@@ -131,8 +138,8 @@
                 <tr>
                     <th>S. No.</th>
                     <th>Name of the visitor (Mr./Ms.)</th>
-                    <th>Company ID</th>
-                    <th>Name of company / College</th>
+                    <th>Govt. ID details/ Vehicle No</th>
+                    <th>Name of company (If applicable)</th>
                 </tr>
             </thead>
             <tbody>
