@@ -15,12 +15,10 @@ const wrapAsync = require("./utils/wrapAsync.js");
 
 const { generatePass } = require("./pdf/generate_pass_final.js"); // if you moved it to a separate file
 
-const Session=require("express-session");
-const passport=require("passport");
-const LocalStrategy=require("passport-local");
-const flash=require("connect-flash");
-
-
+const Session = require("express-session");
+const passport = require("passport");
+const LocalStrategy = require("passport-local");
+const flash = require("connect-flash");
 
 app.use(express.json());
 dotenv.config();
@@ -60,26 +58,27 @@ const validateFill = (req, res, next) => {
   }
 };
 
-app.use(Session({
-  secret:"mysupersecretstring",
-  resave:false,
-  saveUninitialized:true,
-}));
+app.use(
+  Session({
+    secret: "mysupersecretstring",
+    resave: false,
+    saveUninitialized: true,
+  })
+);
 
 app.use(flash());
 
-app.use((req,res,next)=>{
-    res.locals.success=req.flash("success");
-    res.locals.error=req.flash("error");
-    res.locals.currUser=req.user;
-    next();
+app.use((req, res, next) => {
+  res.locals.success = req.flash("success");
+  res.locals.error = req.flash("error");
+  res.locals.currUser = req.user;
+  next();
 });
 app.use(passport.initialize());
 app.use(passport.session());
 passport.use(new LocalStrategy(signupModel.authenticate()));
 passport.serializeUser(signupModel.serializeUser());
 passport.deserializeUser(signupModel.deserializeUser());
-
 
 app.get("/home", (req, res) => {
   res.render("layouts/boilerplate.ejs", { page: "home" });
@@ -209,22 +208,24 @@ app.post("/fill", async (req, res) => {
 // TRIAL , hehe working well
 
 app.post("/signup", async (req, res) => {
-try{
+  try {
     let { email, compID, password } = req.body;
     let newUser = new signupModel({
-    username:email,
-    email: email,
-    enrollmentOrCompanyId: compID,
-  });
-  const registerUser=await signupModel.register(newUser,password);
-  console.log(registerUser);
-  req.flash("success","Welcome to the Pass Management System");
-  res.redirect(`/fill/${newUser._id}`);
-}catch(err){{
-  req.flash("error",err.message);
-  res.redirect("/signup");
-}
-}});
+      username: email,
+      email: email,
+      enrollmentOrCompanyId: compID,
+    });
+    const registerUser = await signupModel.register(newUser, password);
+    console.log(registerUser);
+    req.flash("success", "Welcome to the Pass Management System");
+    res.redirect(`/fill/${newUser._id}`);
+  } catch (err) {
+    {
+      req.flash("error", err.message);
+      res.redirect("/signup");
+    }
+  }
+});
 
 app.get("/fill/:id", (req, res) => {
   const userId = req.params.id; // get id from URL
@@ -349,9 +350,6 @@ app.post("/download-pass", async (req, res) => {
     const user = await userModel.findById(userId).lean();
     if (!user) return res.status(404).send("User not found");
 
-    // parse dates
-    // const issueDate = new Date(validFrom);
-    // const expiryDate = new Date(validUpto);
     const issueDate = new Date(`${validFrom}T00:00:00`);
     const expiryDate = new Date(`${validUpto}T23:59:59`);
     if (isNaN(issueDate) || isNaN(expiryDate)) {
@@ -360,6 +358,18 @@ app.post("/download-pass", async (req, res) => {
     if (expiryDate < issueDate) {
       return res.status(400).send("Valid Upto must be after Valid From");
     }
+
+    // Save the approved pass in the model
+    // const newPass = new passModel({
+    //   userId,
+    //   department: "IT",
+    //   hrId: null, // have to work on it / may come from sessions
+    //   issuedBy: "hr ki email fetch kro",
+    //   validFrom,
+    //   validUpto,
+    //   status: "Active",
+    // });
+    // await newPass.save();
 
     // helpers
     const formatDate = (date) => `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}.${date.getFullYear()}`;
@@ -391,6 +401,7 @@ app.post("/download-pass", async (req, res) => {
       "Content-Disposition": `attachment; filename="Gate_Pass_${user.name.replace(/ /g, "_")}.pdf"`,
     });
     res.send(pdfBuffer);
+    // res.redirect(`/hr/dashboard/${hr._id}`);
   } catch (error) {
     console.error("Error downloading pass:", error);
     res.status(500).send("Error generating pass");
