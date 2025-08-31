@@ -1,47 +1,47 @@
+// ===== Required Modules =====
 const express = require("express");
 const app = express();
 const multer = require("multer");
 const mongoose = require("mongoose");
 const path = require("path");
 const ejsMate = require("ejs-mate");
+const session = require("express-session");
+const passport = require("passport");
+const LocalStrategy = require("passport-local").Strategy;
+const flash = require("connect-flash");
+const dotenv = require("dotenv");
+const streamifier = require("streamifier");
+
 const signupModel = require("./models/signup");
 const userModel = require("./models/user");
 const hrModel = require("./models/hr");
 const passModel = require("./models/pass");
-const dotenv = require("dotenv");
 const { fillSchema } = require("./schema.js");
 const ExpressError = require("./utils/ExpressError.js");
 const wrapAsync = require("./utils/wrapAsync.js");
-const { generatePass } = require("./pdf/generate_pass_final.js"); // if you moved it to a separate file
-const session=require("express-session");
-const passport=require("passport");
-const LocalStrategy=require("passport-local").Strategy;
-const flash=require("connect-flash");
-app.use(express.json());
+const { generatePass } = require("./pdf/generate_pass_final.js");
+const { v2: cloudinary } = require("cloudinary");
 
 dotenv.config();
-app.use(express.urlencoded({ extended: true }));
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("Mongodb connected");
-  })
-  .catch((err) => {
-    console.log("Error connecting mongodb", err);
-  });
 
-// Configure storage (files saved in 'uploads/' folder)
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/");
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + "-" + file.originalname);
-  },
+// ===== Cloudinary Configuration =====
+cloudinary.config({
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.CLOUD_KEY,
+  api_secret: process.env.CLOUD_SECRET,
 });
 
-const upload = multer({ storage: storage });
+// ===== Express & Mongo =====
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("Mongodb connected"))
+  .catch((err) => console.log("Error connecting mongodb", err));
+
+// ===== Multer Memory Storage =====
+const upload = multer({ storage: multer.memoryStorage() });
 
 const validateFill = (req, res, next) => {
   console.log(fillSchema.describe());
@@ -57,7 +57,7 @@ const validateFill = (req, res, next) => {
 };
 
 const sessionOptions={
-    secret:"mysupersecretcode",
+    secret: process.env.SESSEION_SECRET,
     resave:false,
     saveUninitialized:true,
     cookie:{
@@ -215,13 +215,17 @@ app.get("/hr/dashboard/:id",isHR, async (req, res) => {
 
 app.post("/hrfind", async (req, res) => {
   let { visitorName, EnrollmentOrCompanyId, aadhaarLast4 } = req.body;
-  let visitor = await userModel.findOne({ adhaarLast4: aadhaarLast4 });
-  if (visitor) {
-    if (visitor.name !== visitorName || visitor.enrollmentOrCompanyId !== EnrollmentOrCompanyId) {
-      return res.send("User doesnt exist");
-    }
-    res.render("includes/hr_aproove.ejs", { page: "hraprooval", visitor: visitor });
+  let visitor = await userModel.findOne({ name:visitorName ,
+                                          adhaarLast4: aadhaarLast4, 
+                                          enrollmentOrCompanyId: EnrollmentOrCompanyId 
+                                        });
+  if(!visitor){
+    return res.send("User doesnt exist");
   }
+  if (visitor.name !== visitorName || visitor.enrollmentOrCompanyId !== EnrollmentOrCompanyId) {
+    return res.send("User details do not match");
+  }
+  res.render("includes/hr_aproove.ejs", { page: "hraprooval", visitor: visitor });
 });
 
 app.post("/fill", async (req, res) => {
@@ -302,26 +306,44 @@ app.get("/fill/:id", (req, res) => {
   res.render("includes/fill-pass", { page: "fill", userId });
 });
 
+// ===== Fill Pass POST with Cloudinary =====
 app.post("/fill-pass/:id", upload.single("idPic"), validateFill, async (req, res) => {
-  const userId = req.params.id; // directly from URL param
+  const userId = req.params.id;
 
-  let { name, purpose, adhaar, phone, compID, compName, vehicleType, vehicleNumber } = req.body;
-  let createdUser = await userModel.create({
-    _id: userId, // set _id to match signup user
-    name,
-    purpose,
-    adhaarLast4: adhaar,
-    idCardPic: req.file.filename,
-    phone,
-    enrollmentOrCompanyId: compID,
-    collegeOrCompanyName: compName,
-    vehicleType,
-    vehicleNumber,
+  if (!req.file) {
+    req.flash("error", "Please upload your ID card picture");
+    return res.redirect(`/fill/${userId}`);
+  }
+
+  const uploadStream = cloudinary.uploader.upload_stream({ folder: "pass_permit_id_cards" }, async (err, result) => {
+    if (err) {
+      console.error(err);
+      req.flash("error", "Error uploading to Cloudinary");
+      return res.redirect(`/fill/${userId}`);
+    }
+
+    const { name, purpose, adhaar, phone, compID, compName, vehicleType, vehicleNumber } = req.body;
+
+    const createdUser = await userModel.create({
+      _id: userId,
+      name,
+      purpose,
+      adhaarLast4: adhaar,
+      idCardPic: result.secure_url,
+      phone,
+      enrollmentOrCompanyId: compID,
+      collegeOrCompanyName: compName,
+      vehicleType,
+      vehicleNumber,
+    });
+
+    res.redirect(`/dashboard/${createdUser._id}`);
   });
-  console.log("User added");
-  return res.redirect(`/dashboard/${createdUser._id}`);
+
+  streamifier.createReadStream(req.file.buffer).pipe(uploadStream);
 });
 
+// ===== User Dashboard =====
 app.get("/dashboard/:id", async (req, res) => {
   const user_Id = req.params.id; // string url
 
