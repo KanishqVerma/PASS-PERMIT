@@ -213,8 +213,6 @@ app.get("/hr/dashboard/:id",isHR, async (req, res) => {
   res.render("includes/hr_dashboard.ejs", { page: "hrDash", totalPasses, activePasses, expiredPasses, passes });
 });
 
-
-
 app.post("/hrfind", async (req, res) => {
   let { visitorName, EnrollmentOrCompanyId, aadhaarLast4 } = req.body;
   let visitor = await userModel.findOne({ adhaarLast4: aadhaarLast4 });
