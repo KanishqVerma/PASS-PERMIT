@@ -200,7 +200,11 @@ app.get("/hraprooval", (req, res) => {
 
 app.get("/hr/dashboard/:id",isHR, async (req, res) => {
   let hr_id = req.params.id;
+  let{id}=req.params;
   const queryHrId = new mongoose.Types.ObjectId(hr_id);
+  console.log("HR ID from params:", id);
+  
+  
   // let hr = await hrModel.findById();
 
   // fetch all passes for this HR
@@ -210,11 +214,11 @@ app.get("/hr/dashboard/:id",isHR, async (req, res) => {
   const activePasses = await passModel.countDocuments({ hrId: queryHrId, status: "Active" });
   const expiredPasses = await passModel.countDocuments({ hrId: queryHrId, status: "Expired" });
 
-  res.render("includes/hr_dashboard.ejs", { page: "hrDash", totalPasses, activePasses, expiredPasses, passes });
+  res.render("includes/hr_dashboard.ejs", { page: "hrDash", totalPasses, activePasses, expiredPasses, passes ,id});
 });
 
 app.post("/hrfind", async (req, res) => {
-  let { visitorName, EnrollmentOrCompanyId, aadhaarLast4 } = req.body;
+  let { visitorName, EnrollmentOrCompanyId, aadhaarLast4} = req.body;
   let visitor = await userModel.findOne({ name:visitorName ,
                                           adhaarLast4: aadhaarLast4, 
                                           enrollmentOrCompanyId: EnrollmentOrCompanyId 
@@ -295,6 +299,7 @@ app.get("/logout",(req,res)=>{
       return next(err);
     }
     req.flash("success","Logged out successfully");
+    console.log(req.user);
     res.redirect("/home");
   })
 })
