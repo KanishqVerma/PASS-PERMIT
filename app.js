@@ -57,7 +57,7 @@ const validateFill = (req, res, next) => {
 };
 
 const sessionOptions={
-    secret: process.env.SESSEION_SECRET,
+    secret: process.env.SESSION_SECRET,
     resave:false,
     saveUninitialized:true,
     cookie:{
