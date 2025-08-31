@@ -12,15 +12,13 @@ const dotenv = require("dotenv");
 const { fillSchema } = require("./schema.js");
 const ExpressError = require("./utils/ExpressError.js");
 const wrapAsync = require("./utils/wrapAsync.js");
-
 const { generatePass } = require("./pdf/generate_pass_final.js"); // if you moved it to a separate file
-
-const Session = require("express-session");
+const session = require("express-session");
 const passport = require("passport");
-const LocalStrategy = require("passport-local");
+const LocalStrategy = require("passport-local").Strategy;
 const flash = require("connect-flash");
-
 app.use(express.json());
+
 dotenv.config();
 app.use(express.urlencoded({ extended: true }));
 mongoose
@@ -58,27 +56,115 @@ const validateFill = (req, res, next) => {
   }
 };
 
-app.use(
-  Session({
-    secret: "mysupersecretstring",
-    resave: false,
-    saveUninitialized: true,
+const sessionOptions = {
+  secret: "mysupersecretcode",
+  resave: false,
+  saveUninitialized: true,
+  cookie: {
+    expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    httpOnly: true,
+  },
+};
+
+app.use(session(sessionOptions));
+
+app.use(flash());
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Local Strategy
+passport.use(
+  new LocalStrategy({ usernameField: "email" }, async (email, password, done) => {
+    try {
+      // Check if user exists in Signup
+      let user = await signupModel.findOne({ email });
+      if (user) {
+        const validUser = await user.authenticate(password);
+        if (validUser.user) {
+          return done(null, { userid: user._id, role: user.role });
+        }
+        return done(null, false, { message: "Invalid credentials" });
+      }
+
+      // Otherwise check in HR
+      let hr = await hrModel.findOne({ email });
+      if (hr) {
+        if (hr.password === password) {
+          // ⚠ Later replace with bcrypt
+          return done(null, { hrid: hr._id, role: hr.role });
+        }
+        return done(null, false, { message: "Invalid credentials" });
+      }
+
+      return done(null, false, { message: "No account found with that email" });
+    } catch (err) {
+      return done(err);
+    }
   })
 );
 
-app.use(flash());
+passport.serializeUser((user, done) => done(null, user));
 
+passport.deserializeUser(async (obj, done) => {
+  try {
+    if (obj.role === "user") {
+      const user = await signupModel.findById(obj.userid); // match property name
+      return done(null, user);
+    } else if (obj.role === "hr") {
+      const hr = await hrModel.findById(obj.hrid); // match property name
+      return done(null, hr);
+    }
+    done(null, false);
+  } catch (err) {
+    done(err);
+  }
+});
+
+// Make user available in all templates
 app.use((req, res, next) => {
   res.locals.success = req.flash("success");
   res.locals.error = req.flash("error");
   res.locals.currUser = req.user;
+
+  if (req.user) console.log("Logged in user:", req.user);
+
   next();
 });
-app.use(passport.initialize());
-app.use(passport.session());
-passport.use(new LocalStrategy(signupModel.authenticate()));
-passport.serializeUser(signupModel.serializeUser());
-passport.deserializeUser(signupModel.deserializeUser());
+
+// function isLoggedIn(req, res, next) {
+//   if (req.isAuthenticated()) return next();
+//   req.flash("error", "You must be logged in first!");
+//   res.redirect("/login");
+// }
+
+function isHR(req, res, next) {
+  if (req.isAuthenticated() && req.user.role === "hr") {
+    return next();
+  }
+  req.flash("error", "Access denied!");
+  res.redirect("/login");
+}
+
+// ✅ Middleware to check User role
+function isUser(req, res, next) {
+  if (req.isAuthenticated() && req.user.role === "user") {
+    return next();
+  }
+  req.flash("error", "Access denied!");
+  res.redirect("/login");
+}
+
+// app.get("/hr/dashboard/", isHR, (req, res) => {
+//    res.render("includes/hr_dashboard.ejs", { page: "hrDash", currUser: req.user
+//   });
+// });
+
+// app.get("/fill-pass", isUser, (req, res) => {
+//    res.render("includes/fill-pass.ejs", { page: "fill",
+//     currUser: req.user
+//   });
+// });
 
 app.get("/home", (req, res) => {
   res.render("layouts/boilerplate.ejs", { page: "home" });
@@ -112,50 +198,7 @@ app.get("/hraprooval", (req, res) => {
   res.render("includes/hr_aproove.ejs", { page: "hraprooval" });
 });
 
-app.post("/login", async (req, res) => {
-  try {
-    let { email, password, enrollmentOrCompanyId } = req.body;
-    // 1 ) check if it is user or hr
-    let hr = await hrModel.findOne({ email: email });
-    if (hr) {
-      if (hr.password !== password || hr.companyID !== enrollmentOrCompanyId) {
-        return res.send("Invalid credentials");
-      }
-      res.redirect(`/hr/dashboard/${hr._id}`);
-      // res.render("includes/hr_dashboard.ejs", { page: "hrDash" ,hrId:hr._id});
-    }
-
-    // 2. If not HR, check in User collection
-    let existingUser = await signupModel.findOne({ email: email });
-
-    // check password (plain comparison for now, later use bcrypt)
-    if (existingUser) {
-      if (existingUser.Password !== password || existingUser.enrollmentOrCompanyId !== enrollmentOrCompanyId) {
-        return res.send("Invalid credentials");
-      }
-
-      // if user exists and password is correct → check if pass is already filled
-      let userDetails = await userModel.findOne({ enrollmentOrCompanyId: existingUser.enrollmentOrCompanyId });
-
-      if (userDetails) {
-        // already filled → go directly to dashboard
-        console.log(" Existing user login → Dashboard");
-        return res.redirect(`/dashboard/${userDetails._id}`);
-        // return res.render("includes/user_dashboard.ejs", { page: "userDash", user: userDetails });
-      } else {
-        // signed up but pass not filled yet → ask to fill pass
-        console.log("User login but no pass → redirect to fill pass");
-        return res.render("includes/fill-pass.ejs", { page: "fill", user: existingUser });
-      }
-    }
-    // 3. If not in either
-    return res.status(400).send("Email not registered");
-  } catch (err) {
-    console.error(err);
-  }
-});
-
-app.get("/hr/dashboard/:id", async (req, res) => {
+app.get("/hr/dashboard/:id", isHR, async (req, res) => {
   let hr_id = req.params.id;
   const queryHrId = new mongoose.Types.ObjectId(hr_id);
   // let hr = await hrModel.findById();
@@ -169,8 +212,6 @@ app.get("/hr/dashboard/:id", async (req, res) => {
 
   res.render("includes/hr_dashboard.ejs", { page: "hrDash", totalPasses, activePasses, expiredPasses, passes });
 });
-
-// NOW WHEN WE COME TO hr_find , i want to find user
 
 app.post("/hrfind", async (req, res) => {
   let { visitorName, EnrollmentOrCompanyId, aadhaarLast4 } = req.body;
@@ -205,8 +246,6 @@ app.post("/fill", async (req, res) => {
   // return res.redirect(`/dashboard/${userDetails._id}`);
 });
 
-// TRIAL , hehe working well
-
 app.post("/signup", async (req, res) => {
   try {
     let { email, compID, password } = req.body;
@@ -214,6 +253,7 @@ app.post("/signup", async (req, res) => {
       username: email,
       email: email,
       enrollmentOrCompanyId: compID,
+      role: "user",
     });
     const registerUser = await signupModel.register(newUser, password);
     console.log(registerUser);
@@ -227,6 +267,30 @@ app.post("/signup", async (req, res) => {
   }
 });
 
+app.post("/login", passport.authenticate("local", { failureRedirect: "/login", failureFlash: true }), (req, res) => {
+  console.log("After login, req.user:", req.user); // ✅ should print once
+
+  if (req.user.role === "hr") {
+    return res.redirect(`/hr/dashboard/${req.user.hrid}`);
+  } else if (req.user.role === "user") {
+    console.log(req.user.userid);
+    return res.redirect(`/dashboard/${req.user.userid}`);
+  } else {
+    req.flash("error", "Invalid role!");
+    return res.redirect("/login");
+  }
+});
+
+app.get("/logout", (req, res) => {
+  req.logout((err) => {
+    if (err) {
+      return next(err);
+    }
+    req.flash("success", "Logged out successfully");
+    res.redirect("/home");
+  });
+});
+
 app.get("/fill/:id", (req, res) => {
   const userId = req.params.id; // get id from URL
 
@@ -238,6 +302,7 @@ app.post("/fill-pass/:id", upload.single("idPic"), validateFill, async (req, res
 
   let { name, purpose, adhaar, phone, compID, compName, vehicleType, vehicleNumber } = req.body;
   let createdUser = await userModel.create({
+    _id: userId, // set _id to match signup user
     name,
     purpose,
     adhaarLast4: adhaar,
@@ -267,6 +332,7 @@ app.get("/dashboard/:id", async (req, res) => {
   const passes = await passModel.find({ userId: queryUserId });
   return res.render("includes/user_dashboard.ejs", { page: "userDash", user: userDetails, totalPasses, activePasses, expiredPasses, passes });
 });
+
 app.post("/userDash", upload.single("idPic"), validateFill, async (req, res) => {
   // this fxn is not bieng used rn
   let { name, purpose, adhaar, phone, compID, compName, vehicleType, vehicleNumber } = req.body;
@@ -285,58 +351,6 @@ app.post("/userDash", upload.single("idPic"), validateFill, async (req, res) => 
   console.log("User added");
   res.render("includes/user_dashboard.ejs", { page: "userDash", user: createdUser });
 });
-
-// app.post("/download-pass", async (req, res) => {
-//   try {
-//    const { userId, validFrom, validUpto } = req.body;
-//     // const { userId } = req.body; // HR ke click se frontend se bhejna padega
-//     // const passId = req.params.passId;
-//     // const pass = await passModel.findById(passId).populate("userId");
-
-//     // if (!pass) {
-//     //   return res.status(404).send("Pass not found");
-//     // }
-
-//       // yeh user DB se fetch karlo
-//     const user = await userModel.findById(userId);
-//     if (!user) {
-//       return res.status(404).send("User not found");
-//     }
-//     // Format dates
-//     const formatDate = (date) => `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}.${date.getFullYear()}`;
-
-//     const issueDate = pass.issueDate || new Date();
-//     const expiryDate = pass.expiryDate || new Date();
-
-//     // Build passData for generatePass
-//     const passData = {
-//       department: "IT Division, NR Office",
-//       issueDate: formatDate(issueDate),
-//       expiryDate: formatDate(expiryDate),
-//       validity: "2 Months", // or calculate dynamically
-//       visitors: [
-//         {
-//           s_no: 1,
-//           name: user.name,
-//           govt_id: user.adhaarLast4,
-//           company:user.collegeOrCompanyName || "N/A",
-//         },
-//       ],
-//     };
-
-//     const pdfBuffer = await generatePass(passData);
-
-//     // Send as file download
-//     res.set({
-//       "Content-Type": "application/pdf",
-//       "Content-Disposition": `attachment; filename="Gate_Pass_${user.name.replace(/ /g, "_")}.pdf"`,
-//     });
-//     res.send(pdfBuffer);
-//   } catch (error) {
-//     console.error("Error downloading pass:", error);
-//     res.status(500).send("Error generating pass");
-//   }
-// });
 
 app.post("/download-pass", async (req, res) => {
   try {

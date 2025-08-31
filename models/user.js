@@ -58,6 +58,10 @@ const userSchema = new mongoose.Schema(
     department: {
       type: String,
     },
+    role: {
+      type: String,
+      default: "user",
+    },
   },
   { timestamps: true }
 );

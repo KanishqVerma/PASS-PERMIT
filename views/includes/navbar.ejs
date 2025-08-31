@@ -1,7 +1,7 @@
 <nav class="navbar navbar-expand-lg bg-white shadow-sm sticky-top" style="font-size: 1.3rem">
   <div class="container-fluid px-4">
     <!-- Brand -->
-    <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+    <a class="navbar-brand d-flex align-items-center gap-2" href="/">
       <img src="https://img.icons8.com/ios-filled/50/ffffff/airport.png" width="40" height="40" class="rounded-circle p-1" style="background-color: #0059b3" />
       <div class="d-flex flex-column lh-sm">
         <strong style="font-size: 1.6rem; color: #0059b3">Airport Authority of India</strong>
@@ -30,21 +30,30 @@
         <li class="nav-item">
           <a class="nav-link" href="/contact" style="color: #0059b3">Contact</a>
         </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/login" style="color: #0059b3">Login</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/signup" style="color: #0059b3">SignUp</a>
-        </li>
+
+        <% if (!currUser) { %>
+          <!-- Guest -->
+          <li class="nav-item">
+            <a class="nav-link" href="/login" style="color: #0059b3">Login</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/signup" style="color: #0059b3">SignUp</a>
+          </li>
+        <% }   %>
+        <% if(currUser){%>
+          <!-- Logged in (User or HR) -->
+          <li class="nav-item">
+            <a class="nav-link" href="/logout" style="color: #0059b3">Logout</a>
+          </li>
+        <% } %>
       </ul>
 
-      <!-- Right Button -->
-      <div class="d-flex justify-content-lg-end justify-content-center mt-3 mt-lg-0">
-
-
-        <a href="../pdf/generate_pass_final.js" class="btn fw-bold" style="background-color: #0059b3; color: white;">Download Pass</a>
-
-      </div>
+      <!-- Right Button (Role Based) -->
+      <% if (currUser && currUser.role === "user") { %>
+        <div class="d-flex justify-content-lg-end justify-content-center mt-3 mt-lg-0">
+          <a href="/download-pass" class="btn fw-bold" style="background-color: #0059b3; color: white;">Download Pass</a>
+        </div>
+      <% } %>
     </div>
   </div>
 </nav>
