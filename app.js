@@ -21,6 +21,7 @@ const ExpressError = require("./utils/ExpressError.js");
 const wrapAsync = require("./utils/wrapAsync.js");
 const { generatePass } = require("./pdf/generate_pass_final.js");
 const { v2: cloudinary } = require("cloudinary");
+const hr = require("./models/hr");
 
 dotenv.config();
 
@@ -200,7 +201,10 @@ app.get("/hraprooval", (req, res) => {
 
 app.get("/hr/dashboard/:id", isHR, async (req, res) => {
   let hr_id = req.params.id;
+  let { id } = req.params;
   const queryHrId = new mongoose.Types.ObjectId(hr_id);
+  console.log("HR ID from params:", id);
+
   // let hr = await hrModel.findById();
 
   // fetch all passes for this HR
@@ -210,7 +214,7 @@ app.get("/hr/dashboard/:id", isHR, async (req, res) => {
   const activePasses = await passModel.countDocuments({ hrId: queryHrId, status: "Active" });
   const expiredPasses = await passModel.countDocuments({ hrId: queryHrId, status: "Expired" });
 
-  res.render("includes/hr_dashboard.ejs", { page: "hrDash", totalPasses, activePasses, expiredPasses, passes });
+  res.render("includes/hr_dashboard.ejs", { page: "hrDash", totalPasses, activePasses, expiredPasses, passes, id });
 });
 
 app.post("/hrfind", async (req, res) => {
@@ -288,6 +292,7 @@ app.get("/logout", (req, res) => {
       return next(err);
     }
     req.flash("success", "Logged out successfully");
+    console.log(req.user);
     res.redirect("/home");
   });
 });
@@ -335,10 +340,26 @@ app.post("/fill-pass/:id", upload.single("idPic"), validateFill, async (req, res
   streamifier.createReadStream(req.file.buffer).pipe(uploadStream);
 });
 
+// // ===== User Dashboard =====
+// app.get("/dashboard/:id", async (req, res) => {
+//   const user_Id = req.params.id; // string url
+
+//   const queryUserId = new mongoose.Types.ObjectId(user_Id);
+
+//   // fetch user details
+//   const userDetails = await userModel.findById(queryUserId);
+
+//   const totalPasses = await passModel.countDocuments({ userId: queryUserId });
+//   const activePasses = await passModel.countDocuments({ userId: queryUserId, status: "Active" });
+//   const expiredPasses = await passModel.countDocuments({ userId: queryUserId, status: "Expired" });
+
+//   const passes = await passModel.find({ userId: queryUserId });
+//   return res.render("includes/user_dashboard.ejs", { page: "userDash", user: userDetails, totalPasses, activePasses, expiredPasses, passes });
+// });
+
 // ===== User Dashboard =====
 app.get("/dashboard/:id", async (req, res) => {
-  const user_Id = req.params.id; // string url
-
+  const user_Id = req.params.id;
   const queryUserId = new mongoose.Types.ObjectId(user_Id);
 
   // fetch user details
@@ -348,8 +369,41 @@ app.get("/dashboard/:id", async (req, res) => {
   const activePasses = await passModel.countDocuments({ userId: queryUserId, status: "Active" });
   const expiredPasses = await passModel.countDocuments({ userId: queryUserId, status: "Expired" });
 
+  // ✅ get latest active pass (for navbar button)
+  const latestPass = await passModel.findOne({ userId: queryUserId, status: "Active" }).sort({ validFrom: -1 });
+
   const passes = await passModel.find({ userId: queryUserId });
-  return res.render("includes/user_dashboard.ejs", { page: "userDash", user: userDetails, totalPasses, activePasses, expiredPasses, passes });
+
+  return res.render("includes/user_dashboard.ejs", {
+    page: "userDash",
+    user: userDetails,
+    totalPasses,
+    activePasses,
+    expiredPasses,
+    passes,
+    latestPass,
+  });
+});
+
+// ===== Download Pass by ID =====
+app.get("/pass/:id/download", async (req, res) => {
+  try {
+    const pass = await passModel.findById(req.params.id);
+    if (!pass) {
+      return res.status(404).send("Pass not found");
+    }
+
+    // force download using fl_attachment
+    let pdfUrl = pass.pdfUrl;
+    if (pdfUrl.includes("/upload/")) {
+      pdfUrl = pdfUrl.replace("/upload/", "/upload/fl_attachment/");
+    }
+
+    res.redirect(pdfUrl);
+  } catch (err) {
+    console.error("Error downloading pass:", err);
+    res.status(500).send("Something went wrong");
+  }
 });
 
 app.post("/userDash", upload.single("idPic"), validateFill, async (req, res) => {
@@ -373,6 +427,8 @@ app.post("/userDash", upload.single("idPic"), validateFill, async (req, res) => 
 
 app.post("/download-pass", async (req, res) => {
   try {
+    const hrid = req.user._id;
+    console.log("HR ID issuing the pass:", hrid);
     const { userId, validFrom, validUpto } = req.body;
 
     // basic validations
@@ -383,6 +439,7 @@ app.post("/download-pass", async (req, res) => {
     const user = await userModel.findById(userId).lean();
     if (!user) return res.status(404).send("User not found");
 
+    // parse dates
     const issueDate = new Date(`${validFrom}T00:00:00`);
     const expiryDate = new Date(`${validUpto}T23:59:59`);
     if (isNaN(issueDate) || isNaN(expiryDate)) {
@@ -392,19 +449,6 @@ app.post("/download-pass", async (req, res) => {
       return res.status(400).send("Valid Upto must be after Valid From");
     }
 
-    // Save the approved pass in the model
-    // const newPass = new passModel({
-    //   userId,
-    //   department: "IT",
-    //   hrId: null, // have to work on it / may come from sessions
-    //   issuedBy: "hr ki email fetch kro",
-    //   validFrom,
-    //   validUpto,
-    //   status: "Active",
-    // });
-    // await newPass.save();
-
-    // helpers
     const formatDate = (date) => `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}.${date.getFullYear()}`;
 
     const diffDays = Math.ceil((expiryDate - issueDate) / (1000 * 60 * 60 * 24));
@@ -429,6 +473,37 @@ app.post("/download-pass", async (req, res) => {
 
     const pdfBuffer = await generatePass(passData);
 
+    // Upload PDF to Cloudinary
+    const uploadStream = cloudinary.uploader.upload_stream(
+      { folder: "pass_permit_pdf", resource_type: "raw" }, // resource_type raw for PDFs
+      (err, result) => {
+        if (err) {
+          console.error("Cloudinary upload error:", err);
+        } else {
+          console.log("PDF uploaded to Cloudinary:", result.secure_url);
+          // You can store result.secure_url in your DB if needed
+          // Save the approved pass in the model
+
+          const newPass = new passModel({
+            userId,
+            department: "IT",
+            hrId: hrid, // have to work on it / may come from sessions
+            issuedBy: "hr ki email fetch kro",
+            validFrom,
+            validUpto,
+            status: "Active",
+            pdfUrl: result.secure_url,
+          });
+          newPass.save();
+          console.log("Pass record created:", newPass);
+        }
+      }
+    );
+
+    // Pipe PDF buffer to Cloudinary
+    streamifier.createReadStream(pdfBuffer).pipe(uploadStream);
+
+    // Send PDF to user
     res.set({
       "Content-Type": "application/pdf",
       "Content-Disposition": `attachment; filename="Gate_Pass_${user.name.replace(/ /g, "_")}.pdf"`,
