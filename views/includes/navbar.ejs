@@ -48,12 +48,16 @@
         <% } %>
       </ul>
 
-      <!-- Right Button (Role Based) -->
-      <% if (currUser && currUser.role === "user") { %>
+      <% if (currUser && currUser.role === "user" && latestPass) { %>
         <div class="d-flex justify-content-lg-end justify-content-center mt-3 mt-lg-0">
-          <a href="/download-pass" class="btn fw-bold" style="background-color: #0059b3; color: white;">Download Pass</a>
-        </div>
-      <% } %>
+        <a href="/pass/<%= latestPass._id %>/download" 
+         class="btn fw-bold" 
+         style="background-color: #0059b3; color: white;">
+       Download Pass
+      </a>
+      </div>
+     <% } %>
+
     </div>
   </div>
 </nav>

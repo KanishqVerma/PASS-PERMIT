@@ -349,10 +349,26 @@ app.post("/fill-pass/:id", upload.single("idPic"), validateFill, async (req, res
   streamifier.createReadStream(req.file.buffer).pipe(uploadStream);
 });
 
+// // ===== User Dashboard =====
+// app.get("/dashboard/:id", async (req, res) => {
+//   const user_Id = req.params.id; // string url
+
+//   const queryUserId = new mongoose.Types.ObjectId(user_Id);
+
+//   // fetch user details
+//   const userDetails = await userModel.findById(queryUserId);
+
+//   const totalPasses = await passModel.countDocuments({ userId: queryUserId });
+//   const activePasses = await passModel.countDocuments({ userId: queryUserId, status: "Active" });
+//   const expiredPasses = await passModel.countDocuments({ userId: queryUserId, status: "Expired" });
+
+//   const passes = await passModel.find({ userId: queryUserId });
+//   return res.render("includes/user_dashboard.ejs", { page: "userDash", user: userDetails, totalPasses, activePasses, expiredPasses, passes });
+// });
+
 // ===== User Dashboard =====
 app.get("/dashboard/:id", async (req, res) => {
-  const user_Id = req.params.id; // string url
-
+  const user_Id = req.params.id;
   const queryUserId = new mongoose.Types.ObjectId(user_Id);
 
   // fetch user details
@@ -362,9 +378,44 @@ app.get("/dashboard/:id", async (req, res) => {
   const activePasses = await passModel.countDocuments({ userId: queryUserId, status: "Active" });
   const expiredPasses = await passModel.countDocuments({ userId: queryUserId, status: "Expired" });
 
+  // ✅ get latest active pass (for navbar button)
+  const latestPass = await passModel.findOne({ userId: queryUserId, status: "Active" })
+    .sort({ validFrom: -1 });
+
   const passes = await passModel.find({ userId: queryUserId });
-  return res.render("includes/user_dashboard.ejs", { page: "userDash", user: userDetails, totalPasses, activePasses, expiredPasses, passes });
+
+  return res.render("includes/user_dashboard.ejs", { 
+    page: "userDash", 
+    user: userDetails, 
+    totalPasses, 
+    activePasses, 
+    expiredPasses, 
+    passes, 
+    latestPass 
+  });
 });
+
+// ===== Download Pass by ID =====
+app.get("/pass/:id/download", async (req, res) => {
+  try {
+    const pass = await passModel.findById(req.params.id);
+    if (!pass) {
+      return res.status(404).send("Pass not found");
+    }
+
+    // force download using fl_attachment
+    let pdfUrl = pass.pdfUrl;
+    if (pdfUrl.includes("/upload/")) {
+      pdfUrl = pdfUrl.replace("/upload/", "/upload/fl_attachment/");
+    }
+
+    res.redirect(pdfUrl);
+  } catch (err) {
+    console.error("Error downloading pass:", err);
+    res.status(500).send("Something went wrong");
+  }
+});
+
 
 app.post("/userDash", upload.single("idPic"), validateFill, async (req, res) => {
   // this fxn is not bieng used rn
@@ -478,6 +529,8 @@ app.post("/download-pass", async (req, res) => {
     res.status(500).send("Error generating pass");
   }
 });
+
+
 
 // trial 27aug
 
