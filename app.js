@@ -21,6 +21,7 @@ const ExpressError = require("./utils/ExpressError.js");
 const wrapAsync = require("./utils/wrapAsync.js");
 const { generatePass } = require("./pdf/generate_pass_final.js");
 const { v2: cloudinary } = require("cloudinary");
+const hr = require("./models/hr");
 
 dotenv.config();
 
@@ -386,6 +387,8 @@ app.post("/userDash", upload.single("idPic"), validateFill, async (req, res) => 
 
 app.post("/download-pass", async (req, res) => {
   try {
+    const hrid= req.user._id;
+    console.log("HR ID issuing the pass:", hrid);
     const { userId, validFrom, validUpto } = req.body;
 
     // basic validations
@@ -397,8 +400,6 @@ app.post("/download-pass", async (req, res) => {
     if (!user) return res.status(404).send("User not found");
 
     // parse dates
-    // const issueDate = new Date(validFrom);
-    // const expiryDate = new Date(validUpto);
     const issueDate = new Date(`${validFrom}T00:00:00`);
     const expiryDate = new Date(`${validUpto}T23:59:59`);
     if (isNaN(issueDate) || isNaN(expiryDate)) {
@@ -408,8 +409,10 @@ app.post("/download-pass", async (req, res) => {
       return res.status(400).send("Valid Upto must be after Valid From");
     }
 
-    // helpers
-    const formatDate = (date) => `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}.${date.getFullYear()}`;
+    const formatDate = (date) =>
+      `${String(date.getDate()).padStart(2, "0")}.${String(
+        date.getMonth() + 1
+      ).padStart(2, "0")}.${date.getFullYear()}`;
 
     const diffDays = Math.ceil((expiryDate - issueDate) / (1000 * 60 * 60 * 24));
 
@@ -431,9 +434,43 @@ app.post("/download-pass", async (req, res) => {
 
     const pdfBuffer = await generatePass(passData);
 
+    // Upload PDF to Cloudinary
+    const uploadStream = cloudinary.uploader.upload_stream(
+      { folder: "pass_permit_pdf", resource_type: "raw" }, // resource_type raw for PDFs
+      (err, result) => {
+        if (err) {
+          console.error("Cloudinary upload error:", err);
+        } else {
+          console.log("PDF uploaded to Cloudinary:", result.secure_url);
+          // You can store result.secure_url in your DB if needed
+          // Save the approved pass in the model
+          
+    const newPass = new passModel({
+      userId,
+      department: "IT",
+      hrId: hrid, // have to work on it / may come from sessions
+      issuedBy: "hr ki email fetch kro",
+      validFrom,
+      validUpto,
+      status: "Active",
+      pdfUrl: result.secure_url,
+    });
+    newPass.save();
+      console.log("Pass record created:", newPass);
+        }
+      }
+    );
+
+    // Pipe PDF buffer to Cloudinary
+    streamifier.createReadStream(pdfBuffer).pipe(uploadStream);
+
+    // Send PDF to user
     res.set({
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="Gate_Pass_${user.name.replace(/ /g, "_")}.pdf"`,
+      "Content-Disposition": `attachment; filename="Gate_Pass_${user.name.replace(
+        / /g,
+        "_"
+      )}.pdf"`,
     });
     res.send(pdfBuffer);
   } catch (error) {
