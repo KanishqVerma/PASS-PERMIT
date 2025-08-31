@@ -55,6 +55,10 @@ const userSchema = new mongoose.Schema(
         return this.vehicleType != null && this.vehicleType.trim() !== "";
       },
     },
+    role:{
+      type: String,
+      default: "user"
+    }
   },
   { timestamps: true }
 );
