@@ -61,7 +61,7 @@
               <td class="py-3"><%= pass.validFrom.toISOString().split("T")[0]%></td>
               <td class="py-3"><%= pass.validUpto.toISOString().split("T")[0] %></td>
               <td class="py-3 text-center">
-                <a href="#" class="btn btn-sm <%=pass.status === 'Active'?'btn-primary':'btn-secondary'%> rounded-pill px-3 py-2"> <i class="fa-solid fa-download me-1"></i> Download </a>
+                <a href="/pass/<%= pass._id %>/download" class="btn btn-sm <%=pass.status === 'Active'?'btn-primary':'btn-secondary'%> rounded-pill px-3 py-2"> <i class="fa-solid fa-download me-1"></i> Download </a>
               </td>
             </tr>
             <%})%>
@@ -81,3 +81,5 @@
                 <a href="#" class="btn btn-sm btn-secondary rounded-pill px-3 py-2 disabled"> <i class="fa-solid fa-download me-1"></i> Download </a>
               </td>
             </tr> -->
+
+<!-- <a href="/pass//download" class="btn btn-sm btn-primary"> Download </a> -->

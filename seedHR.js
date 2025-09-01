@@ -15,16 +15,16 @@ async function seedHR() {
       {
         email: "hr1@gmail.com",
         password: "hrpassword1",
-        name: "HR One",
+        name: "HR 1",
         companyID: "aai100",
-        department: "IT dept",
+        department: "IT department",
       },
       {
         email: "hr2@gmail.com",
         password: "hrpassword2",
-        name: "HR Two",
+        name: "HR 2",
         companyID: "aai101",
-        department: "Finance",
+        department: "Finance Department ",
       },
     ];
 

@@ -358,6 +358,7 @@ app.post("/fill-pass/:id", upload.single("idPic"), validateFill, async (req, res
 // });
 
 // ===== User Dashboard =====
+
 app.get("/dashboard/:id", async (req, res) => {
   const user_Id = req.params.id;
   const queryUserId = new mongoose.Types.ObjectId(user_Id);
@@ -427,7 +428,11 @@ app.post("/userDash", upload.single("idPic"), validateFill, async (req, res) => 
 
 app.post("/download-pass", async (req, res) => {
   try {
-    const hrid = req.user._id;
+    // try
+    const hr = req.user; // full HR document from session
+    const hrid = hr._id;
+
+    // const hrid = req.user._id;
     console.log("HR ID issuing the pass:", hrid);
     const { userId, validFrom, validUpto } = req.body;
 
@@ -455,7 +460,7 @@ app.post("/download-pass", async (req, res) => {
 
     // build data for PDF
     const passData = {
-      department: "IT Division, NR Office",
+      department: hr.department,
       issueDate: formatDate(issueDate),
       expiryDate: formatDate(expiryDate),
       validity: `${diffDays} Days`,
@@ -486,9 +491,9 @@ app.post("/download-pass", async (req, res) => {
 
           const newPass = new passModel({
             userId,
-            department: "IT",
+            department: hr.department,
             hrId: hrid, // have to work on it / may come from sessions
-            issuedBy: "hr ki email fetch kro",
+            issuedBy: hr.name,
             validFrom,
             validUpto,
             status: "Active",
