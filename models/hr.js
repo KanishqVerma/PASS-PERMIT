@@ -26,7 +26,7 @@ const hrSchema = new Schema(
     },
     role:{
       type: String,
-      default: "hr"
+      default: "hr",
     }
   },
   { timestamps: true }
