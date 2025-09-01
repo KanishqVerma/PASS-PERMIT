@@ -42,9 +42,16 @@
   <% } %>
 
   <% if(currUser){ %>
-    <% if (currUser.role === "user") { %>
+    <% if (currUser.role === "user" ) { %>
       <li class="nav-item">
         <a class="nav-link <%= page === 'userDash' ? 'active-link' : '' %>" href="/dashboard/<%= currUser._id %>" style="color: #0059b3">
+          Dashboard
+        </a>
+      </li>
+    <% } %>
+    <% if (currUser.role === "hr" ) { %>
+      <li class="nav-item">
+        <a class="nav-link <%= page === 'hrDash' ? 'active-link' : '' %>" href="/hr/dashboard/<%= currUser._id %>" style="color: #0059b3">
           Dashboard
         </a>
       </li>
