@@ -272,6 +272,7 @@ app.post("/signup", async (req, res) => {
     const registerUser = await signupModel.register(newUser, password);
     console.log(registerUser);
     req.flash("success", "Welcome to the Pass Management System");
+
     res.redirect(`/fill/${newUser._id}`);
   } catch (err) {
     {
@@ -280,6 +281,7 @@ app.post("/signup", async (req, res) => {
     }
   }
 });
+
 
 app.post("/login", passport.authenticate("local", { failureRedirect: "/login", failureFlash: true }), (req, res) => {
   console.log("After login, req.user:", req.user); // ✅ should print once
