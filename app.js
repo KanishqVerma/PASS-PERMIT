@@ -123,12 +123,23 @@ passport.deserializeUser(async (obj, done) => {
 });
 
 // Make user available in all templates
-app.use((req, res, next) => {
+app.use(async (req, res, next) => {
   res.locals.success = req.flash("success");
   res.locals.error = req.flash("error");
   res.locals.currUser = req.user;
 
-  if (req.user) console.log("Logged in user:", req.user);
+  // Default
+  res.locals.latestPass = null;
+
+  // If logged in and user, fetch latest pass
+  if (req.user && req.user.role === "user") {
+    try {
+      const latest = await passModel.findOne({ userId: req.user._id, status: "Active" }).sort({ validFrom: -1 });
+      res.locals.latestPass = latest;
+    } catch (err) {
+      console.error("Error fetching latestPass:", err);
+    }
+  }
 
   next();
 });
@@ -378,6 +389,7 @@ app.get("/dashboard/:id", async (req, res) => {
   return res.render("includes/user_dashboard.ejs", {
     page: "userDash",
     user: userDetails,
+    currUser: userDetails,
     totalPasses,
     activePasses,
     expiredPasses,

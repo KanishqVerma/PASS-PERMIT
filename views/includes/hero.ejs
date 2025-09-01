@@ -6,8 +6,12 @@
         <h1 class="fw-bold mb-3 display-5">Digital Pass<br />Management System</h1>
         <p class="mb-4 fs-5">Secure, efficient, and digitally signed airport passes with QR<br />code verification for seamless access control.</p>
         <div class="d-flex flex-column flex-sm-row justify-content-center justify-content-md-start">
-          <a href="/signup" class="btn btn-outline-light fw-semibold me-sm-3 mb-2 mb-sm-0">Apply for Pass</a>
-          <a href="/login" class="btn btn-outline-light fw-semibold">HR Dashboard</a>
+          <a href="/process" class="btn btn-outline-light fw-semibold me-sm-3 mb-2 mb-sm-0">Apply for Pass</a>
+          <% if (currUser){ %> <% if(currUser.role==="hr"){%>
+          <a href="/hr/dashboard/<%= currUser._id %>" class="btn btn-outline-light fw-semibold">HR Dashboard</a>
+          <% } %> <% if(currUser.role==="user"){%>
+          <a href="/dashboard/<%= currUser._id %>" class="btn btn-outline-light fw-semibold">User Dashboard</a>
+          <% } %> <% } %>
         </div>
       </div>
 

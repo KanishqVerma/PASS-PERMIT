@@ -1,8 +1,8 @@
 <% layout('layouts/boilerplate') %>
 
-<div class="container mt-5">
+<div class="container mt-5 mb-5"><!-- added mb-5 for bottom spacing -->
 
-    <!-- Welcome Section -->
+  <!-- Welcome Section -->
   <div class="card border-0 shadow-lg mb-5" style="background: linear-gradient(135deg, #4e73df, #224abe); color: white;">
     <div class="card-body d-flex justify-content-between align-items-center p-5">
       <div>
@@ -21,7 +21,7 @@
       <div class="card border-0 shadow-sm text-center p-4">
         <i class="fa-solid fa-list-check text-primary fs-1 mb-3"></i>
         <h5 class="fw-bold mb-2">Total Passes</h5>
-        <p class="fs-4 fw-semibold text-dark mb-0"><%=totalPasses%></p>
+        <p class="fs-4 fw-semibold text-dark mb-0"><%= totalPasses %></p>
       </div>
     </div>
     <div class="col-md-4">
@@ -41,39 +41,52 @@
   </div>
 
   <!-- Pass Table -->
-  <h3 class="mt-4">Your Passes</h3>
-<table class="table table-bordered mt-3">
-  <thead>
-    <tr>
-      <th>Department</th>
-      <th>Issued By</th>
-      <th>Valid From</th>
-      <th>Valid Upto</th>
-      <th>Status</th>
-      <th>Download</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% passes.forEach(pass => { %>
-      <tr>
-        <td><%= pass.department %></td>
-        <td><%= pass.issuedBy %></td>
-        <td><%= new Date(pass.validFrom).toLocaleDateString() %></td>
-        <td><%= new Date(pass.validUpto).toLocaleDateString() %></td>
-        <td><%= pass.status %></td>
-        <td>
-          <a href="/pass/<%= pass._id %>/download" 
-             class="btn btn-sm btn-primary">
-             Download
-          </a>
-        </td>
-      </tr>
-    <% }) %>
-  </tbody>
-</table>
+  <div class="card border-0 shadow-sm mb-5">
+    <div class="card-body p-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0"><i class="fa-solid fa-ticket me-2"></i> Your Passes</h5>
+        <button class="btn btn-outline-primary btn-sm px-3 py-2">
+          <i class="fa-solid fa-rotate me-1"></i> Refresh
+        </button>
+      </div>
 
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-primary text-dark">
+            <tr>
+              <th class="py-3">Department</th>
+              <th class="py-3">Issued By</th>
+              <th class="py-3">Valid From</th>
+              <th class="py-3">Valid Upto</th>
+              <th class="py-3">Status</th>
+              <th class="py-3 text-center">Download</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% passes.forEach(pass => { %>
+              <tr>
+                <td class="py-3"><%= pass.department %></td>
+                <td class="py-3"><%= pass.issuedBy %></td>
+                <td class="py-3"><%= new Date(pass.validFrom).toLocaleDateString() %></td>
+                <td class="py-3"><%= new Date(pass.validUpto).toLocaleDateString() %></td>
+                <td class="py-3">
+                  <span class="badge <%= pass.status === 'Active' ? 'bg-success' : 'bg-danger' %> px-3 py-2">
+                    <%= pass.status %>
+                  </span>
+                </td>
+                <td class="py-3 text-center">
+                  <a href="/pass/<%= pass._id %>/download" 
+                     class="btn btn-sm <%= pass.status === 'Active' ? 'btn-primary' : 'btn-secondary disabled' %> rounded-pill px-3 py-2">
+                     Download
+                  </a>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
 
 </div>
-
-</div>
-
