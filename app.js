@@ -210,22 +210,58 @@ app.get("/hraprooval", (req, res) => {
   res.render("includes/hr_aproove.ejs", { page: "hraprooval" });
 });
 
+// app.get("/hr/dashboard/:id", isHR, async (req, res) => {
+//   let hr_id = req.params.id;
+//   let { id } = req.params;
+//   const queryHrId = new mongoose.Types.ObjectId(hr_id);
+//   console.log("HR ID from params:", id);
+
+//   // let hr = await hrModel.findById();
+
+//   // fetch all passes for this HR
+//   let passes = await passModel.find({ hrId: queryHrId }).populate("userId", "name");
+
+//   const totalPasses = await passModel.countDocuments({ hrId: queryHrId });
+//   const activePasses = await passModel.countDocuments({ hrId: queryHrId, status: "Active" });
+//   const expiredPasses = await passModel.countDocuments({ hrId: queryHrId, status: "Expired" });
+
+//   res.render("includes/hr_dashboard.ejs", { page: "hrDash", totalPasses, activePasses, expiredPasses, passes, id });
+// });
+
 app.get("/hr/dashboard/:id", isHR, async (req, res) => {
   let hr_id = req.params.id;
-  let { id } = req.params;
   const queryHrId = new mongoose.Types.ObjectId(hr_id);
-  console.log("HR ID from params:", id);
 
-  // let hr = await hrModel.findById();
-
-  // fetch all passes for this HR
+  // fetch all passes issued by this HR + user name
   let passes = await passModel.find({ hrId: queryHrId }).populate("userId", "name");
 
-  const totalPasses = await passModel.countDocuments({ hrId: queryHrId });
-  const activePasses = await passModel.countDocuments({ hrId: queryHrId, status: "Active" });
-  const expiredPasses = await passModel.countDocuments({ hrId: queryHrId, status: "Expired" });
+  const today = new Date();
 
-  res.render("includes/hr_dashboard.ejs", { page: "hrDash", totalPasses, activePasses, expiredPasses, passes, id });
+  // recalc status dynamically
+  passes = passes.map((pass) => {
+    let status = "Active";
+    if (new Date(pass.validUpto) < today) {
+      status = "Expired";
+    }
+    return {
+      ...pass.toObject(),
+      status,
+    };
+  });
+
+  // counts
+  const totalPasses = passes.length;
+  const activePasses = passes.filter((p) => p.status === "Active").length;
+  const expiredPasses = passes.filter((p) => p.status === "Expired").length;
+
+  res.render("includes/hr_dashboard.ejs", {
+    page: "hrDash",
+    totalPasses,
+    activePasses,
+    expiredPasses,
+    passes,
+    id: hr_id,
+  });
 });
 
 app.post("/hrfind", async (req, res) => {
@@ -287,12 +323,15 @@ app.post("/login", passport.authenticate("local", { failureRedirect: "/login", f
   console.log("After login, req.user:", req.user); // ✅ should print once
 
   if (req.user.role === "hr") {
+    req.flash("Success", "You are logged in as HR");
     return res.redirect(`/hr/dashboard/${req.user.hrid}`);
   } else if (req.user.role === "user") {
     console.log(req.user.userid);
+    req.flash("Success", "You are logged in as User");
     return res.redirect(`/dashboard/${req.user.userid}`);
   } else {
     req.flash("error", "Invalid role!");
+    console.log("Flash set:", req.flash("no success"));
     return res.redirect("/login");
   }
 });
@@ -370,6 +409,34 @@ app.post("/fill-pass/:id", upload.single("idPic"), validateFill, async (req, res
 
 // ===== User Dashboard =====
 
+// app.get("/dashboard/:id", async (req, res) => {
+//   const user_Id = req.params.id;
+//   const queryUserId = new mongoose.Types.ObjectId(user_Id);
+
+//   // fetch user details
+//   const userDetails = await userModel.findById(queryUserId);
+
+//   const totalPasses = await passModel.countDocuments({ userId: queryUserId });
+//   const activePasses = await passModel.countDocuments({ userId: queryUserId, status: "Active" });
+//   const expiredPasses = await passModel.countDocuments({ userId: queryUserId, status: "Expired" });
+
+//   // ✅ get latest active pass (for navbar button)
+//   const latestPass = await passModel.findOne({ userId: queryUserId, status: "Active" }).sort({ validFrom: -1 });
+
+//   const passes = await passModel.find({ userId: queryUserId });
+
+//   return res.render("includes/user_dashboard.ejs", {
+//     page: "userDash",
+//     user: userDetails,
+//     currUser: userDetails,
+//     totalPasses,
+//     activePasses,
+//     expiredPasses,
+//     passes,
+//     latestPass,
+//   });
+// });
+
 app.get("/dashboard/:id", async (req, res) => {
   const user_Id = req.params.id;
   const queryUserId = new mongoose.Types.ObjectId(user_Id);
@@ -377,15 +444,31 @@ app.get("/dashboard/:id", async (req, res) => {
   // fetch user details
   const userDetails = await userModel.findById(queryUserId);
 
-  const totalPasses = await passModel.countDocuments({ userId: queryUserId });
-  const activePasses = await passModel.countDocuments({ userId: queryUserId, status: "Active" });
-  const expiredPasses = await passModel.countDocuments({ userId: queryUserId, status: "Expired" });
+  // fetch passes
+  let passes = await passModel.find({ userId: queryUserId });
 
-  // ✅ get latest active pass (for navbar button)
-  const latestPass = await passModel.findOne({ userId: queryUserId, status: "Active" }).sort({ validFrom: -1 });
+  const today = new Date();
 
-  const passes = await passModel.find({ userId: queryUserId });
+  // recalculate status based on validUpto
+  passes = passes.map((pass) => {
+    let status = "Active";
+    if (new Date(pass.validUpto) < today) {
+      status = "Expired";
+    }
+    return {
+      ...pass.toObject(),
+      status,
+    };
+  });
 
+  // recalculate counts
+  const totalPasses = passes.length;
+  const activePasses = passes.filter((p) => p.status === "Active").length;
+  const expiredPasses = passes.filter((p) => p.status === "Expired").length;
+
+  // latest active pass (for navbar button)
+  const latestPass = passes.filter((p) => p.status === "Active").sort((a, b) => new Date(b.validFrom) - new Date(a.validFrom))[0];
+  req.flash("Success", "You are logged in as User");
   return res.render("includes/user_dashboard.ejs", {
     page: "userDash",
     user: userDetails,
@@ -417,25 +500,6 @@ app.get("/pass/:id/download", async (req, res) => {
     console.error("Error downloading pass:", err);
     res.status(500).send("Something went wrong");
   }
-});
-
-app.post("/userDash", upload.single("idPic"), validateFill, async (req, res) => {
-  // this fxn is not bieng used rn
-  let { name, purpose, adhaar, phone, compID, compName, vehicleType, vehicleNumber } = req.body;
-
-  let createdUser = await userModel.create({
-    name,
-    purpose,
-    adhaarLast4: adhaar,
-    idCardPic: req.file.filename,
-    phone,
-    enrollmentOrCompanyId: compID,
-    collegeOrCompanyName: compName,
-    vehicleType,
-    vehicleNumber,
-  });
-  console.log("User added");
-  res.render("includes/user_dashboard.ejs", { page: "userDash", user: createdUser });
 });
 
 app.post("/download-pass", async (req, res) => {
@@ -513,6 +577,7 @@ app.post("/download-pass", async (req, res) => {
           });
           newPass.save();
           console.log("Pass record created:", newPass);
+          req.flash("success", "Pdf is generating...Please Wait");
           return res.redirect(`/hr/dashboard/${hr._id}`);
         }
       }
@@ -522,6 +587,7 @@ app.post("/download-pass", async (req, res) => {
     streamifier.createReadStream(pdfBuffer).pipe(uploadStream);
   } catch (error) {
     console.error("Error downloading pass:", error);
+    req.flash("error", "Error generating");
     res.status(500).send("Error generating pass");
   }
 });
