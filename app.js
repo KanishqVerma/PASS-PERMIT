@@ -268,7 +268,7 @@ app.post("/signup", async (req, res) => {
     let newUser = new signupModel({
       username: email,
       email: email,
-      enrollmentOrCompanyId: compID,
+      // enrollmentOrCompanyId: compID,
       role: "user",
     });
     const registerUser = await signupModel.register(newUser, password);
@@ -513,20 +513,13 @@ app.post("/download-pass", async (req, res) => {
           });
           newPass.save();
           console.log("Pass record created:", newPass);
+          return res.redirect(`/hr/dashboard/${hr._id}`);
         }
       }
     );
 
     // Pipe PDF buffer to Cloudinary
     streamifier.createReadStream(pdfBuffer).pipe(uploadStream);
-
-    // Send PDF to user
-    res.set({
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="Gate_Pass_${user.name.replace(/ /g, "_")}.pdf"`,
-    });
-    res.send(pdfBuffer);
-    // res.redirect(`/hr/dashboard/${hr._id}`);
   } catch (error) {
     console.error("Error downloading pass:", error);
     res.status(500).send("Error generating pass");
