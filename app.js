@@ -32,7 +32,6 @@ cloudinary.config({
   api_secret: process.env.CLOUD_SECRET,
 });
 
-// ===== Express & Mongo =====
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -92,7 +91,6 @@ passport.use(
       let hr = await hrModel.findOne({ email });
       if (hr) {
         if (hr.password === password) {
-          // ⚠ Later replace with bcrypt
           return done(null, { hrid: hr._id, role: hr.role });
         }
         return done(null, false, { message: "Invalid credentials" });
@@ -110,10 +108,10 @@ passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser(async (obj, done) => {
   try {
     if (obj.role === "user") {
-      const user = await signupModel.findById(obj.userid); // match property name
+      const user = await signupModel.findById(obj.userid); 
       return done(null, user);
     } else if (obj.role === "hr") {
-      const hr = await hrModel.findById(obj.hrid); // match property name
+      const hr = await hrModel.findById(obj.hrid); 
       return done(null, hr);
     }
     done(null, false);
@@ -310,6 +308,7 @@ app.post("/signup", async (req, res) => {
     const registerUser = await signupModel.register(newUser, password);
     console.log(registerUser);
     req.flash("success", "Welcome to the Pass Management System");
+
     res.redirect(`/fill/${newUser._id}`);
   } catch (err) {
     {
@@ -318,6 +317,7 @@ app.post("/signup", async (req, res) => {
     }
   }
 });
+
 
 app.post("/login", passport.authenticate("local", { failureRedirect: "/login", failureFlash: true }), (req, res) => {
   console.log("After login, req.user:", req.user); // ✅ should print once
@@ -390,22 +390,6 @@ app.post("/fill-pass/:id", upload.single("idPic"), validateFill, async (req, res
   streamifier.createReadStream(req.file.buffer).pipe(uploadStream);
 });
 
-// // ===== User Dashboard =====
-// app.get("/dashboard/:id", async (req, res) => {
-//   const user_Id = req.params.id; // string url
-
-//   const queryUserId = new mongoose.Types.ObjectId(user_Id);
-
-//   // fetch user details
-//   const userDetails = await userModel.findById(queryUserId);
-
-//   const totalPasses = await passModel.countDocuments({ userId: queryUserId });
-//   const activePasses = await passModel.countDocuments({ userId: queryUserId, status: "Active" });
-//   const expiredPasses = await passModel.countDocuments({ userId: queryUserId, status: "Expired" });
-
-//   const passes = await passModel.find({ userId: queryUserId });
-//   return res.render("includes/user_dashboard.ejs", { page: "userDash", user: userDetails, totalPasses, activePasses, expiredPasses, passes });
-// });
 
 // ===== User Dashboard =====
 
@@ -540,14 +524,17 @@ app.post("/download-pass", async (req, res) => {
       issueDate: formatDate(issueDate),
       expiryDate: formatDate(expiryDate),
       validity: `${diffDays} Days`,
+      vehicleType: user.vehicleType ? user.vehicleType : "N/A",
+      vehicleNumber: user.vehicleNumber ? user.vehicleNumber : "N/A",
       visitors: [
         {
           s_no: 1,
           name: user.name,
           govt_id: user.adhaarLast4,
           company: user.collegeOrCompanyName || "N/A",
-          vehicleType: user.vehicleType,
-          vehicleNumber: user.vehicleNumber,
+         vehicleType: user.vehicleType ? user.vehicleType : "N/A",
+         vehicleNumber: user.vehicleNumber ? user.vehicleNumber : "N/A",
+
         },
       ],
     };
@@ -556,19 +543,18 @@ app.post("/download-pass", async (req, res) => {
 
     // Upload PDF to Cloudinary
     const uploadStream = cloudinary.uploader.upload_stream(
-      { folder: "pass_permit_pdf", resource_type: "raw" }, // resource_type raw for PDFs
+      { folder: "pass_permit_pdf", resource_type: "raw" }, 
       (err, result) => {
         if (err) {
           console.error("Cloudinary upload error:", err);
         } else {
           console.log("PDF uploaded to Cloudinary:", result.secure_url);
-          // You can store result.secure_url in your DB if needed
-          // Save the approved pass in the model
+          
 
           const newPass = new passModel({
             userId,
             department: hr.department,
-            hrId: hrid, // have to work on it / may come from sessions
+            hrId: hrid,
             issuedBy: hr.name,
             validFrom,
             validUpto,
@@ -592,22 +578,6 @@ app.post("/download-pass", async (req, res) => {
   }
 });
 
-// trial 27aug
-
-app.get("/api/pass/download-pass/:userId", async (req, res) => {
-  const { userId } = req.params;
-
-  // find the approved pass of this user
-  const pass = await passModel.findOne({ userId, status: "approved" }).populate("userId");
-
-  if (!pass) return res.status(404).send("No approved pass found");
-
-  // generate PDF and send
-  res.setHeader("Content-Type", "application/pdf");
-  res.setHeader("Content-Disposition", `attachment; filename=pass_${userId}.pdf`);
-
-  // your pdf creation logic here...
-});
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
