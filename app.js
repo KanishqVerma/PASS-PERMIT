@@ -476,6 +476,8 @@ app.post("/download-pass", async (req, res) => {
       issueDate: formatDate(issueDate),
       expiryDate: formatDate(expiryDate),
       validity: `${diffDays} Days`,
+      vehicleType:user.vehicleType,
+      vehicleNumber:user.vehicleNumber,
       visitors: [
         {
           s_no: 1,
