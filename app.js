@@ -57,15 +57,15 @@ const validateFill = (req, res, next) => {
   }
 };
 
-const sessionOptions={
-    secret: process.env.SESSION_SECRET,
-    resave:false,
-    saveUninitialized:true,
-    cookie:{
-        expires: Date.now() + 7 * 24 * 60 * 60 *1000,
-        maxAge: 7 * 24 * 60 * 60 *1000,
-        httpOnly: true,
-    },
+const sessionOptions = {
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: true,
+  cookie: {
+    expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    httpOnly: true,
+  },
 };
 
 app.use(session(sessionOptions));
@@ -75,32 +75,35 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // Local Strategy
-passport.use(new LocalStrategy({ usernameField: "email" }, async (email, password, done) => {
-  try {
-    // Check if user exists in Signup
-    let user = await signupModel.findOne({ email });
-    if (user) {
-      const validUser = await user.authenticate(password);
-      if (validUser.user) {
-        return done(null, { userid: user._id, role: user.role });
+passport.use(
+  new LocalStrategy({ usernameField: "email" }, async (email, password, done) => {
+    try {
+      // Check if user exists in Signup
+      let user = await signupModel.findOne({ email });
+      if (user) {
+        const validUser = await user.authenticate(password);
+        if (validUser.user) {
+          return done(null, { userid: user._id, role: user.role });
+        }
+        return done(null, false, { message: "Invalid credentials" });
       }
-      return done(null, false, { message: "Invalid credentials" });
-    }
 
-    // Otherwise check in HR
-    let hr = await hrModel.findOne({ email });
-    if (hr) {
-      if (hr.password === password) {  // ⚠ Later replace with bcrypt
-        return done(null, { hrid: hr._id, role: hr.role });
+      // Otherwise check in HR
+      let hr = await hrModel.findOne({ email });
+      if (hr) {
+        if (hr.password === password) {
+          // ⚠ Later replace with bcrypt
+          return done(null, { hrid: hr._id, role: hr.role });
+        }
+        return done(null, false, { message: "Invalid credentials" });
       }
-      return done(null, false, { message: "Invalid credentials" });
-    }
 
-    return done(null, false, { message: "No account found with that email" });
-  } catch (err) {
-    return done(err);
-  }
-}));
+      return done(null, false, { message: "No account found with that email" });
+    } catch (err) {
+      return done(err);
+    }
+  })
+);
 
 passport.serializeUser((user, done) => done(null, user));
 
@@ -131,8 +134,7 @@ app.use(async (req, res, next) => {
   // If logged in and user, fetch latest pass
   if (req.user && req.user.role === "user") {
     try {
-      const latest = await passModel.findOne({ userId: req.user._id, status: "Active" })
-        .sort({ validFrom: -1 });
+      const latest = await passModel.findOne({ userId: req.user._id, status: "Active" }).sort({ validFrom: -1 });
       res.locals.latestPass = latest;
     } catch (err) {
       console.error("Error fetching latestPass:", err);
@@ -141,8 +143,6 @@ app.use(async (req, res, next) => {
 
   next();
 });
-
-
 
 // function isLoggedIn(req, res, next) {
 //   if (req.isAuthenticated()) return next();
@@ -178,7 +178,6 @@ function isUser(req, res, next) {
 //   });
 // });
 
-
 app.get("/home", (req, res) => {
   res.render("layouts/boilerplate.ejs", { page: "home" });
 });
@@ -211,14 +210,12 @@ app.get("/hraprooval", (req, res) => {
   res.render("includes/hr_aproove.ejs", { page: "hraprooval" });
 });
 
-
-app.get("/hr/dashboard/:id",isHR, async (req, res) => {
+app.get("/hr/dashboard/:id", isHR, async (req, res) => {
   let hr_id = req.params.id;
-  let{id}=req.params;
+  let { id } = req.params;
   const queryHrId = new mongoose.Types.ObjectId(hr_id);
   console.log("HR ID from params:", id);
-  
-  
+
   // let hr = await hrModel.findById();
 
   // fetch all passes for this HR
@@ -228,16 +225,13 @@ app.get("/hr/dashboard/:id",isHR, async (req, res) => {
   const activePasses = await passModel.countDocuments({ hrId: queryHrId, status: "Active" });
   const expiredPasses = await passModel.countDocuments({ hrId: queryHrId, status: "Expired" });
 
-  res.render("includes/hr_dashboard.ejs", { page: "hrDash", totalPasses, activePasses, expiredPasses, passes ,id});
+  res.render("includes/hr_dashboard.ejs", { page: "hrDash", totalPasses, activePasses, expiredPasses, passes, id });
 });
 
 app.post("/hrfind", async (req, res) => {
-  let { visitorName, EnrollmentOrCompanyId, aadhaarLast4} = req.body;
-  let visitor = await userModel.findOne({ name:visitorName ,
-                                          adhaarLast4: aadhaarLast4, 
-                                          enrollmentOrCompanyId: EnrollmentOrCompanyId 
-                                        });
-  if(!visitor){
+  let { visitorName, EnrollmentOrCompanyId, aadhaarLast4 } = req.body;
+  let visitor = await userModel.findOne({ name: visitorName, adhaarLast4: aadhaarLast4, enrollmentOrCompanyId: EnrollmentOrCompanyId });
+  if (!visitor) {
     return res.send("User doesnt exist");
   }
   if (visitor.name !== visitorName || visitor.enrollmentOrCompanyId !== EnrollmentOrCompanyId) {
@@ -285,39 +279,34 @@ app.post("/signup", async (req, res) => {
     {
       req.flash("error", err.message);
       res.redirect("/signup");
-    }
-  }
-});
-
-app.post(
-  "/login",
-  passport.authenticate("local", { failureRedirect: "/login", failureFlash: true }),
-  (req, res) => {
-    console.log("After login, req.user:", req.user); // ✅ should print once
-
-    if (req.user.role === "hr") {
-      return res.redirect(`/hr/dashboard/${req.user.hrid}`);
-    } else if (req.user.role === "user") {
-      console.log(req.user.userid);
-      return res.redirect(`/dashboard/${req.user.userid}`);
-    } else {
-      req.flash("error", "Invalid role!");
-      return res.redirect("/login");
     }
   }
-);
+});
 
-app.get("/logout",(req,res)=>{
-  req.logout((err)=>{
-    if(err){
+app.post("/login", passport.authenticate("local", { failureRedirect: "/login", failureFlash: true }), (req, res) => {
+  console.log("After login, req.user:", req.user); // ✅ should print once
+
+  if (req.user.role === "hr") {
+    return res.redirect(`/hr/dashboard/${req.user.hrid}`);
+  } else if (req.user.role === "user") {
+    console.log(req.user.userid);
+    return res.redirect(`/dashboard/${req.user.userid}`);
+  } else {
+    req.flash("error", "Invalid role!");
+    return res.redirect("/login");
+  }
+});
+
+app.get("/logout", (req, res) => {
+  req.logout((err) => {
+    if (err) {
       return next(err);
     }
-    req.flash("success","Logged out successfully");
+    req.flash("success", "Logged out successfully");
     console.log(req.user);
     res.redirect("/home");
-  })
-})
-
+  });
+});
 
 app.get("/fill/:id", (req, res) => {
   const userId = req.params.id; // get id from URL
@@ -380,6 +369,7 @@ app.post("/fill-pass/:id", upload.single("idPic"), validateFill, async (req, res
 // });
 
 // ===== User Dashboard =====
+
 app.get("/dashboard/:id", async (req, res) => {
   const user_Id = req.params.id;
   const queryUserId = new mongoose.Types.ObjectId(user_Id);
@@ -392,20 +382,19 @@ app.get("/dashboard/:id", async (req, res) => {
   const expiredPasses = await passModel.countDocuments({ userId: queryUserId, status: "Expired" });
 
   // ✅ get latest active pass (for navbar button)
-  const latestPass = await passModel.findOne({ userId: queryUserId, status: "Active" })
-    .sort({ validFrom: -1 });
+  const latestPass = await passModel.findOne({ userId: queryUserId, status: "Active" }).sort({ validFrom: -1 });
 
   const passes = await passModel.find({ userId: queryUserId });
 
-  return res.render("includes/user_dashboard.ejs", { 
-    page: "userDash", 
+  return res.render("includes/user_dashboard.ejs", {
+    page: "userDash",
     user: userDetails,
     currUser: userDetails,
-    totalPasses, 
-    activePasses, 
-    expiredPasses, 
-    passes, 
-    latestPass 
+    totalPasses,
+    activePasses,
+    expiredPasses,
+    passes,
+    latestPass,
   });
 });
 
@@ -430,7 +419,6 @@ app.get("/pass/:id/download", async (req, res) => {
   }
 });
 
-
 app.post("/userDash", upload.single("idPic"), validateFill, async (req, res) => {
   // this fxn is not bieng used rn
   let { name, purpose, adhaar, phone, compID, compName, vehicleType, vehicleNumber } = req.body;
@@ -452,7 +440,11 @@ app.post("/userDash", upload.single("idPic"), validateFill, async (req, res) => 
 
 app.post("/download-pass", async (req, res) => {
   try {
-    const hrid= req.user._id;
+    // try
+    const hr = req.user; // full HR document from session
+    const hrid = hr._id;
+
+    // const hrid = req.user._id;
     console.log("HR ID issuing the pass:", hrid);
     const { userId, validFrom, validUpto } = req.body;
 
@@ -474,16 +466,13 @@ app.post("/download-pass", async (req, res) => {
       return res.status(400).send("Valid Upto must be after Valid From");
     }
 
-    const formatDate = (date) =>
-      `${String(date.getDate()).padStart(2, "0")}.${String(
-        date.getMonth() + 1
-      ).padStart(2, "0")}.${date.getFullYear()}`;
+    const formatDate = (date) => `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}.${date.getFullYear()}`;
 
     const diffDays = Math.ceil((expiryDate - issueDate) / (1000 * 60 * 60 * 24));
 
     // build data for PDF
     const passData = {
-      department: "IT Division, NR Office",
+      department: hr.department,
       issueDate: formatDate(issueDate),
       expiryDate: formatDate(expiryDate),
       validity: `${diffDays} Days`,
@@ -493,6 +482,8 @@ app.post("/download-pass", async (req, res) => {
           name: user.name,
           govt_id: user.adhaarLast4,
           company: user.collegeOrCompanyName || "N/A",
+          vehicleType: user.vehicleType,
+          vehicleNumber: user.vehicleNumber,
         },
       ],
     };
@@ -509,19 +500,19 @@ app.post("/download-pass", async (req, res) => {
           console.log("PDF uploaded to Cloudinary:", result.secure_url);
           // You can store result.secure_url in your DB if needed
           // Save the approved pass in the model
-          
-    const newPass = new passModel({
-      userId,
-      department: "IT",
-      hrId: hrid, // have to work on it / may come from sessions
-      issuedBy: "hr ki email fetch kro",
-      validFrom,
-      validUpto,
-      status: "Active",
-      pdfUrl: result.secure_url,
-    });
-    newPass.save();
-      console.log("Pass record created:", newPass);
+
+          const newPass = new passModel({
+            userId,
+            department: hr.department,
+            hrId: hrid, // have to work on it / may come from sessions
+            issuedBy: hr.name,
+            validFrom,
+            validUpto,
+            status: "Active",
+            pdfUrl: result.secure_url,
+          });
+          newPass.save();
+          console.log("Pass record created:", newPass);
         }
       }
     );
@@ -532,19 +523,15 @@ app.post("/download-pass", async (req, res) => {
     // Send PDF to user
     res.set({
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="Gate_Pass_${user.name.replace(
-        / /g,
-        "_"
-      )}.pdf"`,
+      "Content-Disposition": `attachment; filename="Gate_Pass_${user.name.replace(/ /g, "_")}.pdf"`,
     });
     res.send(pdfBuffer);
+    // res.redirect(`/hr/dashboard/${hr._id}`);
   } catch (error) {
     console.error("Error downloading pass:", error);
     res.status(500).send("Error generating pass");
   }
 });
-
-
 
 // trial 27aug
 

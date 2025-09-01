@@ -44,7 +44,7 @@ const userSchema = new mongoose.Schema(
 
     vehicleType: {
       type: String,
-      enum: ["Car", "Bike", "Scooter", "Cycle", "Other",""],
+      enum: ["Car", "Bike", "Scooter", "Cycle", "Other", ""],
       required: false,
       default: null,
     },
@@ -55,10 +55,13 @@ const userSchema = new mongoose.Schema(
         return this.vehicleType != null && this.vehicleType.trim() !== "";
       },
     },
-    role:{
+    department: {
       type: String,
-      default: "user"
-    }
+    },
+    role: {
+      type: String,
+      default: "user",
+    },
   },
   { timestamps: true }
 );
