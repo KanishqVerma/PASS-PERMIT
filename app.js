@@ -465,8 +465,6 @@ app.get("/dashboard/:id", async (req, res) => {
   });
 });
 
-<<<<<<< HEAD
-=======
 // ===== Download Pass by ID =====
 app.get("/pass/:id/download", async (req, res) => {
   try {
@@ -581,7 +579,6 @@ app.post("/download-pass", async (req, res) => {
 });
 
 
->>>>>>> upstream/main
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
