@@ -1,51 +1,47 @@
+// ===== Required Modules =====
 const express = require("express");
 const app = express();
 const multer = require("multer");
 const mongoose = require("mongoose");
 const path = require("path");
 const ejsMate = require("ejs-mate");
+const session = require("express-session");
+const passport = require("passport");
+const LocalStrategy = require("passport-local").Strategy;
+const flash = require("connect-flash");
+const dotenv = require("dotenv");
+const streamifier = require("streamifier");
+
 const signupModel = require("./models/signup");
 const userModel = require("./models/user");
 const hrModel = require("./models/hr");
 const passModel = require("./models/pass");
-const dotenv = require("dotenv");
 const { fillSchema } = require("./schema.js");
 const ExpressError = require("./utils/ExpressError.js");
 const wrapAsync = require("./utils/wrapAsync.js");
+const { generatePass } = require("./pdf/generate_pass_final.js");
+const { v2: cloudinary } = require("cloudinary");
+const hr = require("./models/hr");
 
-const { generatePass } = require("./pdf/generate_pass_final.js"); // if you moved it to a separate file
-
-const Session=require("express-session");
-const passport=require("passport");
-const LocalStrategy=require("passport-local");
-const flash=require("connect-flash");
-
-
-
-app.use(express.json());
 dotenv.config();
-app.use(express.urlencoded({ extended: true }));
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("Mongodb connected");
-  })
-  .catch((err) => {
-    console.log("Error connecting mongodb", err);
-  });
 
-// Configure storage (files saved in 'uploads/' folder)
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/");
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + "-" + file.originalname);
-  },
+// ===== Cloudinary Configuration =====
+cloudinary.config({
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.CLOUD_KEY,
+  api_secret: process.env.CLOUD_SECRET,
 });
 
-const upload = multer({ storage: storage });
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("Mongodb connected"))
+  .catch((err) => console.log("Error connecting mongodb", err));
+
+// ===== Multer Memory Storage =====
+const upload = multer({ storage: multer.memoryStorage() });
 
 const validateFill = (req, res, next) => {
   console.log(fillSchema.describe());
@@ -60,26 +56,125 @@ const validateFill = (req, res, next) => {
   }
 };
 
-app.use(Session({
-  secret:"mysupersecretstring",
-  resave:false,
-  saveUninitialized:true,
-}));
+const sessionOptions = {
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: true,
+  cookie: {
+    expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    httpOnly: true,
+  },
+};
+
+app.use(session(sessionOptions));
 
 app.use(flash());
-
-app.use((req,res,next)=>{
-    res.locals.success=req.flash("success");
-    res.locals.error=req.flash("error");
-    res.locals.currUser=req.user;
-    next();
-});
 app.use(passport.initialize());
 app.use(passport.session());
-passport.use(new LocalStrategy(signupModel.authenticate()));
-passport.serializeUser(signupModel.serializeUser());
-passport.deserializeUser(signupModel.deserializeUser());
 
+// Local Strategy
+passport.use(
+  new LocalStrategy({ usernameField: "email" }, async (email, password, done) => {
+    try {
+      // Check if user exists in Signup
+      let user = await signupModel.findOne({ email });
+      if (user) {
+        const validUser = await user.authenticate(password);
+        if (validUser.user) {
+          return done(null, { userid: user._id, role: user.role });
+        }
+        return done(null, false, { message: "Invalid credentials" });
+      }
+
+      // Otherwise check in HR
+      let hr = await hrModel.findOne({ email });
+      if (hr) {
+        if (hr.password === password) {
+          return done(null, { hrid: hr._id, role: hr.role });
+        }
+        return done(null, false, { message: "Invalid credentials" });
+      }
+
+      return done(null, false, { message: "No account found with that email" });
+    } catch (err) {
+      return done(err);
+    }
+  })
+);
+
+passport.serializeUser((user, done) => done(null, user));
+
+passport.deserializeUser(async (obj, done) => {
+  try {
+    if (obj.role === "user") {
+      const user = await signupModel.findById(obj.userid); 
+      return done(null, user);
+    } else if (obj.role === "hr") {
+      const hr = await hrModel.findById(obj.hrid); 
+      return done(null, hr);
+    }
+    done(null, false);
+  } catch (err) {
+    done(err);
+  }
+});
+
+// Make user available in all templates
+app.use(async (req, res, next) => {
+  res.locals.success = req.flash("success");
+  res.locals.error = req.flash("error");
+  res.locals.currUser = req.user;
+
+  // Default
+  res.locals.latestPass = null;
+
+  // If logged in and user, fetch latest pass
+  if (req.user && req.user.role === "user") {
+    try {
+      const latest = await passModel.findOne({ userId: req.user._id, status: "Active" }).sort({ validFrom: -1 });
+      res.locals.latestPass = latest;
+    } catch (err) {
+      console.error("Error fetching latestPass:", err);
+    }
+  }
+
+  next();
+});
+
+// function isLoggedIn(req, res, next) {
+//   if (req.isAuthenticated()) return next();
+//   req.flash("error", "You must be logged in first!");
+//   res.redirect("/login");
+// }
+
+function isHR(req, res, next) {
+  if (req.isAuthenticated() && req.user.role === "hr") {
+    return next();
+  }
+  req.flash("error", "Access denied!");
+  res.redirect("/login");
+}
+
+// ✅ Middleware to check User role
+function isUser(req, res, next) {
+  if (req.isAuthenticated() && req.user.role === "user") {
+    return next();
+  }
+  req.flash("error", "Access denied!");
+  res.redirect("/login");
+}
+
+// app.get("/hr/dashboard/", isHR, (req, res) => {
+//    res.render("includes/hr_dashboard.ejs", { page: "hrDash", currUser: req.user
+//   });
+// });
+
+// app.get("/fill-pass", isUser, (req, res) => {
+//    res.render("includes/fill-pass.ejs", { page: "fill",
+//     currUser: req.user
+//   });
+// });
 
 app.get("/home", (req, res) => {
   res.render("layouts/boilerplate.ejs", { page: "home" });
@@ -113,75 +208,70 @@ app.get("/hraprooval", (req, res) => {
   res.render("includes/hr_aproove.ejs", { page: "hraprooval" });
 });
 
-app.post("/login", async (req, res) => {
-  try {
-    let { email, password, enrollmentOrCompanyId } = req.body;
-    // 1 ) check if it is user or hr
-    let hr = await hrModel.findOne({ email: email });
-    if (hr) {
-      if (hr.password !== password || hr.companyID !== enrollmentOrCompanyId) {
-        return res.send("Invalid credentials");
-      }
-      res.redirect(`/hr/dashboard/${hr._id}`);
-      // res.render("includes/hr_dashboard.ejs", { page: "hrDash" ,hrId:hr._id});
-    }
+// app.get("/hr/dashboard/:id", isHR, async (req, res) => {
+//   let hr_id = req.params.id;
+//   let { id } = req.params;
+//   const queryHrId = new mongoose.Types.ObjectId(hr_id);
+//   console.log("HR ID from params:", id);
 
-    // 2. If not HR, check in User collection
-    let existingUser = await signupModel.findOne({ email: email });
+//   // let hr = await hrModel.findById();
 
-    // check password (plain comparison for now, later use bcrypt)
-    if (existingUser) {
-      if (existingUser.Password !== password || existingUser.enrollmentOrCompanyId !== enrollmentOrCompanyId) {
-        return res.send("Invalid credentials");
-      }
+//   // fetch all passes for this HR
+//   let passes = await passModel.find({ hrId: queryHrId }).populate("userId", "name");
 
-      // if user exists and password is correct → check if pass is already filled
-      let userDetails = await userModel.findOne({ enrollmentOrCompanyId: existingUser.enrollmentOrCompanyId });
+//   const totalPasses = await passModel.countDocuments({ hrId: queryHrId });
+//   const activePasses = await passModel.countDocuments({ hrId: queryHrId, status: "Active" });
+//   const expiredPasses = await passModel.countDocuments({ hrId: queryHrId, status: "Expired" });
 
-      if (userDetails) {
-        // already filled → go directly to dashboard
-        console.log(" Existing user login → Dashboard");
-        return res.redirect(`/dashboard/${userDetails._id}`);
-        // return res.render("includes/user_dashboard.ejs", { page: "userDash", user: userDetails });
-      } else {
-        // signed up but pass not filled yet → ask to fill pass
-        console.log("User login but no pass → redirect to fill pass");
-        return res.render("includes/fill-pass.ejs", { page: "fill", user: existingUser });
-      }
-    }
-    // 3. If not in either
-    return res.status(400).send("Email not registered");
-  } catch (err) {
-    console.error(err);
-  }
-});
+//   res.render("includes/hr_dashboard.ejs", { page: "hrDash", totalPasses, activePasses, expiredPasses, passes, id });
+// });
 
-app.get("/hr/dashboard/:id", async (req, res) => {
+app.get("/hr/dashboard/:id", isHR, async (req, res) => {
   let hr_id = req.params.id;
   const queryHrId = new mongoose.Types.ObjectId(hr_id);
-  // let hr = await hrModel.findById();
 
-  // fetch all passes for this HR
+  // fetch all passes issued by this HR + user name
   let passes = await passModel.find({ hrId: queryHrId }).populate("userId", "name");
 
-  const totalPasses = await passModel.countDocuments({ hrId: queryHrId });
-  const activePasses = await passModel.countDocuments({ hrId: queryHrId, status: "Active" });
-  const expiredPasses = await passModel.countDocuments({ hrId: queryHrId, status: "Expired" });
+  const today = new Date();
 
-  res.render("includes/hr_dashboard.ejs", { page: "hrDash", totalPasses, activePasses, expiredPasses, passes });
+  // recalc status dynamically
+  passes = passes.map((pass) => {
+    let status = "Active";
+    if (new Date(pass.validUpto) < today) {
+      status = "Expired";
+    }
+    return {
+      ...pass.toObject(),
+      status,
+    };
+  });
+
+  // counts
+  const totalPasses = passes.length;
+  const activePasses = passes.filter((p) => p.status === "Active").length;
+  const expiredPasses = passes.filter((p) => p.status === "Expired").length;
+
+  res.render("includes/hr_dashboard.ejs", {
+    page: "hrDash",
+    totalPasses,
+    activePasses,
+    expiredPasses,
+    passes,
+    id: hr_id,
+  });
 });
-
-// NOW WHEN WE COME TO hr_find , i want to find user
 
 app.post("/hrfind", async (req, res) => {
   let { visitorName, EnrollmentOrCompanyId, aadhaarLast4 } = req.body;
-  let visitor = await userModel.findOne({ adhaarLast4: aadhaarLast4 });
-  if (visitor) {
-    if (visitor.name !== visitorName || visitor.enrollmentOrCompanyId !== EnrollmentOrCompanyId) {
-      return res.send("User doesnt exist");
-    }
-    res.render("includes/hr_aproove.ejs", { page: "hraprooval", visitor: visitor });
+  let visitor = await userModel.findOne({ name: visitorName, adhaarLast4: aadhaarLast4, enrollmentOrCompanyId: EnrollmentOrCompanyId });
+  if (!visitor) {
+    return res.send("User doesnt exist");
   }
+  if (visitor.name !== visitorName || visitor.enrollmentOrCompanyId !== EnrollmentOrCompanyId) {
+    return res.send("User details do not match");
+  }
+  res.render("includes/hr_aproove.ejs", { page: "hraprooval", visitor: visitor });
 });
 
 app.post("/fill", async (req, res) => {
@@ -206,25 +296,56 @@ app.post("/fill", async (req, res) => {
   // return res.redirect(`/dashboard/${userDetails._id}`);
 });
 
-// TRIAL , hehe working well
-
 app.post("/signup", async (req, res) => {
-try{
+  try {
     let { email, compID, password } = req.body;
     let newUser = new signupModel({
-    username:email,
-    email: email,
-    enrollmentOrCompanyId: compID,
+      username: email,
+      email: email,
+      // enrollmentOrCompanyId: compID,
+      role: "user",
+    });
+    const registerUser = await signupModel.register(newUser, password);
+    console.log(registerUser);
+    req.flash("success", "Welcome to the Pass Management System");
+
+    res.redirect(`/fill/${newUser._id}`);
+  } catch (err) {
+    {
+      req.flash("error", err.message);
+      res.redirect("/signup");
+    }
+  }
+});
+
+
+app.post("/login", passport.authenticate("local", { failureRedirect: "/login", failureFlash: true }), (req, res) => {
+  console.log("After login, req.user:", req.user); // ✅ should print once
+
+  if (req.user.role === "hr") {
+    req.flash("Success", "You are logged in as HR");
+    return res.redirect(`/hr/dashboard/${req.user.hrid}`);
+  } else if (req.user.role === "user") {
+    console.log(req.user.userid);
+    req.flash("Success", "You are logged in as User");
+    return res.redirect(`/dashboard/${req.user.userid}`);
+  } else {
+    req.flash("error", "Invalid role!");
+    console.log("Flash set:", req.flash("no success"));
+    return res.redirect("/login");
+  }
+});
+
+app.get("/logout", (req, res) => {
+  req.logout((err) => {
+    if (err) {
+      return next(err);
+    }
+    req.flash("success", "Logged out successfully");
+    console.log(req.user);
+    res.redirect("/home");
   });
-  const registerUser=await signupModel.register(newUser,password);
-  console.log(registerUser);
-  req.flash("success","Welcome to the Pass Management System");
-  res.redirect(`/fill/${newUser._id}`);
-}catch(err){{
-  req.flash("error",err.message);
-  res.redirect("/signup");
-}
-}});
+});
 
 app.get("/fill/:id", (req, res) => {
   const userId = req.params.id; // get id from URL
@@ -232,59 +353,235 @@ app.get("/fill/:id", (req, res) => {
   res.render("includes/fill-pass", { page: "fill", userId });
 });
 
+// ===== Fill Pass POST with Cloudinary =====
 app.post("/fill-pass/:id", upload.single("idPic"), validateFill, async (req, res) => {
-  const userId = req.params.id; // directly from URL param
+  const userId = req.params.id;
 
-  let { name, purpose, adhaar, phone, compID, compName, vehicleType, vehicleNumber } = req.body;
-  let createdUser = await userModel.create({
-    name,
-    purpose,
-    adhaarLast4: adhaar,
-    idCardPic: req.file.filename,
-    phone,
-    enrollmentOrCompanyId: compID,
-    collegeOrCompanyName: compName,
-    vehicleType,
-    vehicleNumber,
+  if (!req.file) {
+    req.flash("error", "Please upload your ID card picture");
+    return res.redirect(`/fill/${userId}`);
+  }
+
+  const uploadStream = cloudinary.uploader.upload_stream({ folder: "pass_permit_id_cards" }, async (err, result) => {
+    if (err) {
+      console.error(err);
+      req.flash("error", "Error uploading to Cloudinary");
+      return res.redirect(`/fill/${userId}`);
+    }
+
+    const { name, purpose, adhaar, phone, compID, compName, vehicleType, vehicleNumber } = req.body;
+
+    const createdUser = await userModel.create({
+      _id: userId,
+      name,
+      purpose,
+      adhaarLast4: adhaar,
+      idCardPic: result.secure_url,
+      phone,
+      enrollmentOrCompanyId: compID,
+      collegeOrCompanyName: compName,
+      vehicleType,
+      vehicleNumber,
+    });
+
+    res.redirect(`/dashboard/${createdUser._id}`);
   });
-  console.log("User added");
-  return res.redirect(`/dashboard/${createdUser._id}`);
+
+  streamifier.createReadStream(req.file.buffer).pipe(uploadStream);
 });
 
-app.get("/dashboard/:id", async (req, res) => {
-  const user_Id = req.params.id; // string url
 
+// ===== User Dashboard =====
+
+// app.get("/dashboard/:id", async (req, res) => {
+//   const user_Id = req.params.id;
+//   const queryUserId = new mongoose.Types.ObjectId(user_Id);
+
+//   // fetch user details
+//   const userDetails = await userModel.findById(queryUserId);
+
+//   const totalPasses = await passModel.countDocuments({ userId: queryUserId });
+//   const activePasses = await passModel.countDocuments({ userId: queryUserId, status: "Active" });
+//   const expiredPasses = await passModel.countDocuments({ userId: queryUserId, status: "Expired" });
+
+//   // ✅ get latest active pass (for navbar button)
+//   const latestPass = await passModel.findOne({ userId: queryUserId, status: "Active" }).sort({ validFrom: -1 });
+
+//   const passes = await passModel.find({ userId: queryUserId });
+
+//   return res.render("includes/user_dashboard.ejs", {
+//     page: "userDash",
+//     user: userDetails,
+//     currUser: userDetails,
+//     totalPasses,
+//     activePasses,
+//     expiredPasses,
+//     passes,
+//     latestPass,
+//   });
+// });
+
+app.get("/dashboard/:id", async (req, res) => {
+  const user_Id = req.params.id;
   const queryUserId = new mongoose.Types.ObjectId(user_Id);
 
   // fetch user details
   const userDetails = await userModel.findById(queryUserId);
 
-  const totalPasses = await passModel.countDocuments({ userId: queryUserId });
-  const activePasses = await passModel.countDocuments({ userId: queryUserId, status: "Active" });
-  const expiredPasses = await passModel.countDocuments({ userId: queryUserId, status: "Expired" });
+  // fetch passes
+  let passes = await passModel.find({ userId: queryUserId });
 
-  const passes = await passModel.find({ userId: queryUserId });
-  return res.render("includes/user_dashboard.ejs", { page: "userDash", user: userDetails, totalPasses, activePasses, expiredPasses, passes });
-});
-app.post("/userDash", upload.single("idPic"), validateFill, async (req, res) => {
-  // this fxn is not bieng used rn
-  let { name, purpose, adhaar, phone, compID, compName, vehicleType, vehicleNumber } = req.body;
+  const today = new Date();
 
-  let createdUser = await userModel.create({
-    name,
-    purpose,
-    adhaarLast4: adhaar,
-    idCardPic: req.file.filename,
-    phone,
-    enrollmentOrCompanyId: compID,
-    collegeOrCompanyName: compName,
-    vehicleType,
-    vehicleNumber,
+  // recalculate status based on validUpto
+  passes = passes.map((pass) => {
+    let status = "Active";
+    if (new Date(pass.validUpto) < today) {
+      status = "Expired";
+    }
+    return {
+      ...pass.toObject(),
+      status,
+    };
   });
-  console.log("User added");
-  res.render("includes/user_dashboard.ejs", { page: "userDash", user: createdUser });
+
+  // recalculate counts
+  const totalPasses = passes.length;
+  const activePasses = passes.filter((p) => p.status === "Active").length;
+  const expiredPasses = passes.filter((p) => p.status === "Expired").length;
+
+  // latest active pass (for navbar button)
+  const latestPass = passes.filter((p) => p.status === "Active").sort((a, b) => new Date(b.validFrom) - new Date(a.validFrom))[0];
+  req.flash("Success", "You are logged in as User");
+  return res.render("includes/user_dashboard.ejs", {
+    page: "userDash",
+    user: userDetails,
+    currUser: userDetails,
+    totalPasses,
+    activePasses,
+    expiredPasses,
+    passes,
+    latestPass,
+  });
 });
 
+<<<<<<< HEAD
+=======
+// ===== Download Pass by ID =====
+app.get("/pass/:id/download", async (req, res) => {
+  try {
+    const pass = await passModel.findById(req.params.id);
+    if (!pass) {
+      return res.status(404).send("Pass not found");
+    }
+
+    // force download using fl_attachment
+    let pdfUrl = pass.pdfUrl;
+    if (pdfUrl.includes("/upload/")) {
+      pdfUrl = pdfUrl.replace("/upload/", "/upload/fl_attachment/");
+    }
+
+    res.redirect(pdfUrl);
+  } catch (err) {
+    console.error("Error downloading pass:", err);
+    res.status(500).send("Something went wrong");
+  }
+});
+
+app.post("/download-pass", async (req, res) => {
+  try {
+    // try
+    const hr = req.user; // full HR document from session
+    const hrid = hr._id;
+
+    // const hrid = req.user._id;
+    console.log("HR ID issuing the pass:", hrid);
+    const { userId, validFrom, validUpto } = req.body;
+
+    // basic validations
+    if (!userId || !validFrom || !validUpto) {
+      return res.status(400).send("userId, validFrom, validUpto are required");
+    }
+
+    const user = await userModel.findById(userId).lean();
+    if (!user) return res.status(404).send("User not found");
+
+    // parse dates
+    const issueDate = new Date(`${validFrom}T00:00:00`);
+    const expiryDate = new Date(`${validUpto}T23:59:59`);
+    if (isNaN(issueDate) || isNaN(expiryDate)) {
+      return res.status(400).send("Invalid dates");
+    }
+    if (expiryDate < issueDate) {
+      return res.status(400).send("Valid Upto must be after Valid From");
+    }
+
+    const formatDate = (date) => `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}.${date.getFullYear()}`;
+
+    const diffDays = Math.ceil((expiryDate - issueDate) / (1000 * 60 * 60 * 24));
+
+    // build data for PDF
+    const passData = {
+      department: hr.department,
+      issueDate: formatDate(issueDate),
+      expiryDate: formatDate(expiryDate),
+      validity: `${diffDays} Days`,
+      vehicleType: user.vehicleType ? user.vehicleType : "N/A",
+      vehicleNumber: user.vehicleNumber ? user.vehicleNumber : "N/A",
+      visitors: [
+        {
+          s_no: 1,
+          name: user.name,
+          govt_id: user.adhaarLast4,
+          company: user.collegeOrCompanyName || "N/A",
+         vehicleType: user.vehicleType ? user.vehicleType : "N/A",
+         vehicleNumber: user.vehicleNumber ? user.vehicleNumber : "N/A",
+
+        },
+      ],
+    };
+
+    const pdfBuffer = await generatePass(passData);
+
+    // Upload PDF to Cloudinary
+    const uploadStream = cloudinary.uploader.upload_stream(
+      { folder: "pass_permit_pdf", resource_type: "raw" }, 
+      (err, result) => {
+        if (err) {
+          console.error("Cloudinary upload error:", err);
+        } else {
+          console.log("PDF uploaded to Cloudinary:", result.secure_url);
+          
+
+          const newPass = new passModel({
+            userId,
+            department: hr.department,
+            hrId: hrid,
+            issuedBy: hr.name,
+            validFrom,
+            validUpto,
+            status: "Active",
+            pdfUrl: result.secure_url,
+          });
+          newPass.save();
+          console.log("Pass record created:", newPass);
+          req.flash("success", "Pdf is generated");
+          return res.redirect(`/hr/dashboard/${hr._id}`);
+        }
+      }
+    );
+
+    // Pipe PDF buffer to Cloudinary
+    streamifier.createReadStream(pdfBuffer).pipe(uploadStream);
+  } catch (error) {
+    console.error("Error downloading pass:", error);
+    req.flash("error", "Error generating");
+    res.status(500).send("Error generating pass");
+  }
+});
+
+
+>>>>>>> upstream/main
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 

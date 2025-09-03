@@ -33,5 +33,9 @@ const passSchema = new mongoose.Schema({
     enum: ["Active", "Expired"],
     default: "Active",
   },
+  pdfUrl: {
+    type: String,
+    required: true,
+  },
 });
 module.exports = mongoose.model("pass", passSchema);

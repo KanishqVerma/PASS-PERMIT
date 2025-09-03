@@ -8,12 +8,17 @@ const signupSchema = new Schema(
       type: String,
       required: true,
       unique: true,
-    }
+    },
+    role:{
+      type: String,
+      enum: ["user", "hr"],
+      default: "user"
+    },
   },
   {timestamps:true},
 );
 
 
-signupSchema.plugin(passportLocalMongoose); // adds username, hash and salt fields
+signupSchema.plugin(passportLocalMongoose,{ usernameField: "email" }); // adds username, hash and salt fields
 
 module.exports = mongoose.model("Signup", signupSchema);

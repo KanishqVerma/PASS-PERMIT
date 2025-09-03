@@ -83,7 +83,9 @@ async function generatePass(passData) {
     const qrCodeData = `Name: ${passData.visitors[0].name}\n
     CompanyID: ${passData.visitors[0].govt_id}\n
     Issue: ${passData.issueDate}\n
-    Expires: ${passData.expiryDate}`;
+    Expires: ${passData.expiryDate} \n
+    VehicleType: ${passData.visitors[0].vehicleType}\n
+    VehicleNumber : ${passData.visitors[0].vehicleNumber}\n`;
 
     const qrCodeImage = await qrcode.toDataURL(qrCodeData);
 

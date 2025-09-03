@@ -57,6 +57,23 @@ body {
 } */
 
 /*Navbar */
+/* Active link */
+.navbar-nav .nav-link.active-link {
+  color: #0059b3 !important;
+}
+
+/* Force underline for active link */
+.navbar-nav .nav-link.active-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100% !important;
+  height: 2px;
+  background-color: #0059b3;
+}
+
+
 .navbar-nav .nav-link {
   position: relative;
   white-space: nowrap;

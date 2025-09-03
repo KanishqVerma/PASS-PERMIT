@@ -14,20 +14,16 @@
       <main class="content">
         <%- include("../includes/navbar.ejs") %>
 
-        <div>
-          <% if (page === "home") { %> 
-            <%- include("../includes/hero.ejs") %> 
-          <% } %> 
+        <!-- Flash messages -->
+        <%- include("../includes/flash.ejs") %>
 
-          <% if (page === "login" || page==="signup" || page==="about" || page==="process" || page==="contact" || page==="fill" || page==="userDash" || page==="hrDash" || page==="hrfind" || page==="hraprooval") { %> 
-            <%- body %>
-          <% } %>
+        <div>
+          <% if (page === "home") { %> <%- include("../includes/hero.ejs") %> <% } %> <% if (page === "login" || page==="signup" || page==="about" || page==="process" || page==="contact" || page==="fill" || page==="userDash" || page==="hrDash" || page==="hrfind" || page==="hraprooval") { %> <%- body
+          %> <% } %>
         </div>
       </main>
 
-      <footer>
-        <%- include("../includes/footer.ejs") %>
-      </footer>
+      <footer><%- include("../includes/footer.ejs") %></footer>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js" integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q" crossorigin="anonymous"></script>
