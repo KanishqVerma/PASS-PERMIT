@@ -563,7 +563,7 @@ app.post("/download-pass", async (req, res) => {
           });
           newPass.save();
           console.log("Pass record created:", newPass);
-          req.flash("success", "Pdf is generating...Please Wait");
+          req.flash("success", "Pdf is generated");
           return res.redirect(`/hr/dashboard/${hr._id}`);
         }
       }
